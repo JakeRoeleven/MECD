@@ -21,13 +21,13 @@ int main(void)
     VECTOR_PUSHBACK(v, "my");
     VECTOR_PUSHBACK(v, "name");
     VECTOR_PUSHBACK(v, "is");
-    VECTOR_PUSHBACK(v, "Jake");
+    VECTOR_PUSHBACK(v, "Tom");
 
     for (i = 0; i < VECTOR_SIZE(v); i++)
         printf("%s ", (char *) VECTOR_AT(v, char*, i));
     printf("\n");
 
-    VECTOR_SET(v, 4, "Kevin");
+    VECTOR_SET(v, 4, 12);
 
     for (i = 0; i < VECTOR_SIZE(v); i++)
         printf("%s ", (char *) VECTOR_AT(v, char*, i));
