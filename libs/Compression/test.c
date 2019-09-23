@@ -8,6 +8,7 @@
 #include<string.h>
 
 int main(void) {
+    compressFile();
     return 0;
 }
 
@@ -37,14 +38,11 @@ Node* createBaseNode(int *nodeContentsP, int nodeFreq) {
 }
 
 /*A recursive function to build the huffman Tree out of Nodes*/
-Node* buildTree(Tree* treeListP) {
+Node* buildTree(Tree* list) {
 
-    int i, place = 0;
-
-    while (treeListP->size > 1) {
-        /*Find the two smallest nodes*/
+    int i;
+    /*while (treeListP->size > 1) {
         int* smallestNodes = getSmallest(treeListP);
-        /*Create an int array of the smallest ints*/
         int newInts[treeListP->nodes[smallestNodes[1]]->size + treeListP->nodes[smallestNodes[0]]->size];
 
         for(i = 0; i < treeListP->nodes[smallestNodes[1]]->size; i++) {
@@ -58,15 +56,61 @@ Node* buildTree(Tree* treeListP) {
             treeListP->nodes[smallestNodes[1]]->freq + treeListP->nodes[smallestNodes[0]]->freq, 
             treeListP->nodes[smallestNodes[1]], treeListP->nodes[smallestNodes[0]]);
         
-        memmove(treeListP->nodes + smallestNodes[0], treeListP->nodes + smallestNodes[0] + 1, (treeListP->size - smallestNodes[0] - 1) * sizeof(Node*));
+        memmove(treeListP->nodes + smallestNodes[0], treeListP->nodes + smallestNodes[0] + 1, 
+            (treeListP->size - smallestNodes[0] - 1) * sizeof(Node*));
         treeListP->size--;
 
 
         return buildTree(treeListP);
-    }
-    return treeListP->nodes[0];
+        }
+    return treeListP->nodes[0];*/
 
+    while (list->size > 1) {
+
+        int* smallest = getSmallest(list);;
+        int one = &smallest[1];
+        int zero = &smallest[0];
+        int newInts[list->nodes[one]->size + list->nodes[zero]->size];
+
+        int place = 0;
+
+        for(i = 0; i < list->nodes[one]->size; i++) {
+            newInts[place++] = list->nodes[one]->contents[i];
+        }
+        for (i = 0; i < list->nodes[zero]->size; i++) {
+            newInts[place++] = list->nodes[zero]->contents[i];
+        }
+        list->nodes[one] = createNode(newInts, list->nodes[one]->size + list->nodes[zero]->size, 
+            list->nodes[one]->freq + list->nodes[zero]->freq, 
+            list->nodes[one], list->nodes[zero]);
+        memmove(list->nodes + zero, list->nodes + zero + 1, (list->size - zero - 1) * sizeof(Node*));
+        list->size--;
+
+
+        return buildTree(list);
+        }
+    return list->nodes[0];
+
+    /*    int* smallest = getSmallest(list);
+        printf("%d", &smallest[1]);
+        int one = &smallest[1];
+        int zero = &smallest[0];
+        int newInts[list->nodes[one]->size + list->nodes[zero]->size];
+        int place = 0;
+        for(i = 0; i < list->nodes[one]->size; i++) {
+            newInts[place++] = list->nodes[one]->contents[i];
+        }
+        for (i = 0; i < list->nodes[zero]->size; i++) {
+            newInts[place++] = list->nodes[zero]->contents[i];
+        }
+        list->nodes[one] = createNode(newInts, list->nodes[one]->size + list->nodes[zero]->size, 
+            list->nodes[one]->freq + list->nodes[zero]->freq, 
+            list->nodes[one], list->nodes[zero]);
+        memmove(list->nodes + zero, list->nodes + zero + 1, (list->size - zero - 1) * sizeof(Node*));
+        list->size--;
+    return list->nodes[zero];*/
 }
+
 
 /*Construct an array of the Ascii Bit codes*/
 char** generateBitAsciiArray(Node* treeP) {
@@ -121,7 +165,7 @@ char* getCode(Node* nextP, int find, char* bitsP) {
 /* Find the smallest frequency of two nodes*/
 int* getSmallest(Tree* treeP) {
 
-    static int smallestNode[2] = {0};
+    int smallestNode[2];
     int i;
 
     for (i = 0; i < treeP->size; i++)
@@ -262,4 +306,105 @@ Tree* arrayFromList(int* listP, int size) {
         }
     freq->size = size;
     return freq;
+}
+
+void freeTree(Node* treeP) {
+    /*Free non base nodes*/
+    if (treeP->left && treeP->right) {
+        freeTree(treeP->left);
+        freeTree(treeP->right);
+        free(treeP->contents);
+        free(treeP);
+    /*Free base nodes*/
+    } 
+    else {
+        free(treeP->contents);
+        free(treeP);
+    }
+}
+
+void freeNodeArray(Tree* treeP) {
+
+    int i;
+    for (i = 0; i < treeP->size; i++) {
+        freeTree(treeP->nodes[i]);
+    }
+    free(treeP->nodes);
+    free(treeP);
+}
+
+void freeBitArray(char** arrP) {
+
+    int i;
+    for(i = 0; i < 257; i++) {
+        free(arrP[i]);
+    }
+    free(arrP);
+}
+
+/*TODO Document*/
+void compression(char* inputPath, char* outputPath, char** array) {
+
+    int ch;
+    /* TODO: Fix Teneray Operator */
+    FILE* rf = fopen(inputPath, "r");
+    FILE* wf = outputPath ? fopen(outputPath, "a") : NULL;
+
+    /*Initialize an empty string to act as the bit buffer*/
+    char* currentBits = malloc(1);
+    strcpy(currentBits, "");
+    /*Loop through every character in the file*/
+    for (ch = fgetc(rf); ch != EOF; ch = fgetc(rf)) {
+
+        currentBits = realloc(currentBits, strlen(currentBits) + strlen(array[ch]) + 1);
+        strcat(currentBits, array[ch]);
+        while(strlen(currentBits) >= 8) {
+            char bitString[9];
+            strncpy(bitString, currentBits, 8);
+            memmove(currentBits, currentBits + 8, strlen(currentBits) - 7);
+            if (wf) {
+                fputc(strtol(bitString, NULL, 2), wf);
+            }
+            else printf("%s", bitString);
+        }
+    }
+
+    fclose(rf);
+    currentBits = realloc(currentBits, strlen(currentBits) + strlen(array[256]) + 1);
+    strcat(currentBits, array[256]);
+    while(strlen(currentBits) % 8 != 0) {
+        currentBits = realloc(currentBits, strlen(currentBits) + 2);
+        strcat(currentBits, "0");
+    }
+   
+    while(strlen(currentBits) >= 8) {
+        char bitString[9];
+        strncpy(bitString, currentBits, 8);
+        memmove(currentBits, currentBits + 8, strlen(currentBits) - 7);
+        if (wf) fputc(strtol(bitString, NULL, 2), wf);
+        else printf("%s", bitString);
+    }
+
+    if(!wf) puts("");
+    free(currentBits);
+    if (wf) fclose(wf);
+}
+
+void compressFile(void) {
+
+    char* inFilePath = "in.txt";
+    char* outFilePath = "out.min";
+    Tree* x;
+    Node* top;
+
+    printf("Lets Compress\n");
+    printf("%s\n", inFilePath);
+    x = buildFrequencyFile(inFilePath, outFilePath);
+    top = buildTree(x);
+    char** array = generateBitAsciiArray(top);
+    compression(inFilePath, outFilePath, array);
+    freeBitArray(array);
+    freeNodeArray(x);
+
+
 }

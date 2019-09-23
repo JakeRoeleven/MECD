@@ -20,7 +20,7 @@ struct HuffmanNode {
 
 struct HuffmanTree {
     Node** nodes;
-    int size, capacity;
+    int size;
 };
 
 Node* createNode(int *nodeContentsP, int nodeSize, int nodeFreq, Node* leftP, Node* rightP); 
@@ -38,7 +38,9 @@ void freeTree(Node* tree);
 void freeNodeArray(Tree* tree);
 void freeBitArray(char** arr);
 
-void compressFile(char* inputPath, char* outputPath, char** array);
+void compression(char* inputPath, char* outputPath, char** array);
 void decompressFile(char* inputPath, char* outputPath,  Node* tree, int size);
+
+void compressFile();
 
 #endif
