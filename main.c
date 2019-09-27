@@ -27,24 +27,36 @@ void menu() {
 		printf ("Encrypt Database\n");
 		printf ("Compress Database\n");
 			
-		printf (""Enter choice (number between 1-5)>\n");
+		printf (""Enter choice (number between 1-7)>\n");
 		scanf ("&d", choice);
 		
 		switch (choice){
-	              case 1:
+	        case 1:
 			Search ();
 			break;
-		      case 2:
+		case 2:
 			CreatEntry ();
 			break;
-		      case 3:
+		case 3:
 			Displayfiles ();
 			break;
-			
-			
+		case 4:
+			Save ();
+			break;
+		case 5:
+			Load ();
+			break;
+		case 6:
+			Encrypt ();
+			break;
+	        case 7:
+			Compress ();
+			Break;	
 	return 0;
 }
 
+void Search(){
+	
 void CreatEntry(){
 	file_t new_file;
 	char buffer[1000]
