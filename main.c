@@ -1,7 +1,10 @@
 /*******************************************************************************
  * 48430 Fundamentals of C Programming - Group Assignment
  * Authors:
- * 	Jake Roeleven
+ * Jake Roeleven - 13246638
+ * Thomas Coates - 13276922
+ * Beichen Man   - 12416780
+ * Zinh AL-Sweedy - 12402677
  * Date Complete:
 *******************************************************************************/
 
