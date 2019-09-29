@@ -1,410 +1,253 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-
 #include "compression.h"
-#include<stdio.h>
-#include<stdlib.h>
-#include<string.h>
 
-int main(void) {
-    compressFile();
+/* compare two Huffman trees based on frequency, descending order */
+int CmpTrees(const void *a, const void *b)
+{
+    const htree **x = (const htree **) a, **y = (const htree **) b;
+    if((*x)->freq == (*y)->freq) return 0;
+    else return ((*x)->freq < (*y)->freq) ? 1 : -1;
+}
+
+/* create a new string with given letter concatenated on to the prefix */
+char *Concat(char *prefix, char letter)
+{
+    char *result = (char *)malloc(strlen(prefix) + 2);
+    sprintf(result, "%s%c", prefix, letter);
+    return result;
+}
+
+/* print specified error message and quite */
+void Error(const char *msg)
+{
+    fprintf(stderr, "Error: %s\n", msg);
+    exit(1);
+}
+
+/* build and return a Huffman tree based on a frequency table */
+htree *BuildTree(int frequencies[])
+{
+    int i, len = 0;
+    htree *queue[CHAR_RANGE];
+    
+    /* create trees for each character, add to the queue */
+    for(i = 0; i < CHAR_RANGE; i++)
+    {
+        if(frequencies[i])
+        {
+            htree *toadd = (htree *)calloc(1, sizeof(htree));
+            toadd->letter = i;
+            toadd->freq = frequencies[i];
+
+            queue[len++] = toadd;
+        }
+    }
+    
+    while(len > 1)
+    {
+        htree *toadd = (htree *)malloc(sizeof(htree));
+        
+        /* sort - smallest frequency trees are last */
+        qsort(queue, len, sizeof(htree *), CmpTrees);
+        
+        /* dequeue two lowest frequency trees, build new tree from them */
+        toadd->left = queue[--len];
+        toadd->right = queue[--len];
+        toadd->freq = toadd->left->freq + toadd->right->freq;
+        
+        queue[len++] = toadd; /* insert back in the queue */
+    }
+    
+    return queue[0]; /* last tree in the queue is the full Huffman tree */
+}
+
+/* deallocate given Huffman tree */
+void FreeTree(htree *tree)
+{
+    if(tree)
+    {
+        FreeTree(tree->left);
+        FreeTree(tree->right);
+        free(tree);
+    }
+}
+
+/* traverse the Huffman tree to build up a table of encodings */
+void TraverseTree(htree *tree, char **table, char *prefix)
+{
+    if(!tree->left && !tree->right) table[tree->letter] = prefix;
+    else
+    {
+        if(tree->left) TraverseTree(tree->left, table, Concat(prefix, '0'));
+        if(tree-> right) TraverseTree(tree->right, table, Concat(prefix, '1'));
+        free(prefix);
+    }
+}
+
+/* build a table of Huffman encodings given a set of frequencies */
+char **BuildTable(int frequenciesArray[])
+{
+    static char *tableP[CHAR_RANGE];
+    char *toFindP = (char *)calloc(1, sizeof(char));
+    htree* treeP = BuildTree(frequenciesArray);
+    TraverseTree(treeP, tableP, toFindP); 
+    FreeTree(treeP);
+
+    return tableP;
+}
+
+/* deallocate table of Huffman encodings */
+void FreeTable(char *table[])
+{
+    int i;
+    for(i = 0; i < CHAR_RANGE; i++) if(table[i]) free(table[i]);
+}
+
+/* output the Huffman header for an encoded file */
+void WriteHeader(FILE *outFile, int frequenciesArray[])
+{
+    
+    int i, count = 0;
+    
+    for (i = 0; i < CHAR_RANGE; i++) if (frequenciesArray[i]) count++;
+    fprintf(outFile, "%d\n", count);
+    for (i = 0; i < CHAR_RA; i++) {
+        if (frequenciesArray[i]) {
+            fprintf(outFile, "%d %d\n", i, frequenciesArray[i]);
+        }
+    }
+}
+
+/* read in the header of a Huffman encoded file */
+int *ReadHeader(FILE *in)
+{
+    static int frequencies[CHAR_RANGE];
+    int i, count, letter, freq;
+    
+    if(fscanf(in, "%d", &count) != 1) Error("invalid input file.");
+    
+    for(i = 0; i < count; i++)
+    {
+        if((fscanf(in, "%d %d", &letter, &freq) != 2)
+           || letter < 0 || letter >= CHAR_RANGE) Error("invalid input file.");
+        
+        frequencies[letter] = freq;
+    }
+    fgetc(in); /* discard last newline */
+    
+    return frequencies;
+}
+
+/* write the given bit encoding to the output file */
+void WriteBits(const char *encoding, FILE *out)
+{
+    /* buffer holding raw bits and number of bits filled */
+    static int bits = 0, bitcount = 0;
+    
+    while(*encoding)
+    {
+        /* push bits on from the right */
+        bits = bits * 2 + *encoding - '0';
+        bitcount++;
+        
+        /* when we have filled the char, output as a single character */
+        if(bitcount == CHAR_BITS)
+        {
+            fputc(bits, out);
+            bits = 0;
+            bitcount = 0;
+        }
+        
+        encoding++;
+    }
+}
+
+/* read a single bit from the input file */
+int ReadBit(FILE *in)
+{
+    /* buffer holding raw bits and size of MSB filled */
+    static int bits = 0, bitcount = 0;
+    int nextbit;
+    
+    if(bitcount == 0)
+    {
+        bits = fgetc(in);
+        bitcount = (1 << (CHAR_BITS - 1));
+    }
+    
+    nextbit = bits / bitcount;
+    bits %= bitcount;
+    bitcount /= 2;
+    
+    return nextbit;
+}
+
+/* decode and return a single character from the input using the given Huffman
+ * tree */
+int DecodeChar(FILE *in, htree *tree)
+{
+    while(tree->left || tree->right)
+    {
+        if(ReadBit(in)) tree = tree->right;
+        else tree = tree->left;
+        
+        if(!tree) Error("invalid input file.");
+    }
+    return tree->letter;
+}
+
+/* decode the Huffman-encoded file in and save the results to out */
+void Decode(FILE *in, FILE *out)
+{
+    int *frequencies, c;
+    htree *tree;
+    
+    frequencies = ReadHeader(in);
+    tree = BuildTree(frequencies);
+    
+    while((c = DecodeChar(in, tree)) != FAKE_EOF)
+        fputc(c, out);
+    
+    FreeTree(tree);
+}
+
+/* create a Huffman encoding for the file in and save the encoded version to
+ * out */
+void Encode(FILE *in, FILE *out)
+{
+    int c, frequencies[CHAR_RANGE] = { 0 };
+    char **table;
+    
+    while((c = fgetc(in)) != EOF) frequencies[c]++;
+    
+    frequencies[FAKE_EOF] = 1;
+    rewind(in);
+    
+    table = BuildTable(frequencies);
+    WriteHeader(out, frequencies);
+    
+    while((c = fgetc(in)) != EOF)
+        WriteBits(table[c], out);
+    
+    /* use FAKE_EOF to indicate end of input */
+    WriteBits(table[FAKE_EOF], out);
+    
+    /* write an extra 8 blank bits to flush the output buffer */
+    WriteBits("0000000", out);
+    
+    FreeTable(table);
+}
+
+int main()
+{
+    FILE *in, *out;
+
+    in = fopen("text.txt", "rb");
+    out = fopen("out.min", "wb");
+    
+    Encode(in, out);
+    
+    fclose(in);
+    fclose(out);
+    
     return 0;
-}
-
-/* For the creation of the node strucutres within our huffman tree*/
-Node* createNode(int *nodeContentP, int nodeSize, int nodeFreq, Node* leftP, Node* rightP) {
-
-    int i;
-    Node *newNodeP = malloc(sizeof(Node));
-    int *nodeContentsP = malloc(sizeof(int) *nodeSize);
-   
-    for(i = 0; i < nodeSize; i++) {
-        nodeContentsP[i] = nodeContentP[i]; 
-    }
-
-    newNodeP->contents = nodeContentsP;
-    newNodeP->size = nodeSize;
-    newNodeP->freq = nodeFreq;
-    newNodeP->left = leftP;
-    newNodeP->right = rightP;
-
-    return newNodeP;
-}
-
-/*Create a base node*/
-Node* createBaseNode(int *nodeContentsP, int nodeFreq) {
-    return createNode(nodeContentsP, 1, nodeFreq, NULL, NULL);
-}
-
-/*A recursive function to build the huffman Tree out of Nodes*/
-Node* buildTree(Tree* list) {
-
-    int i;
-    /*while (treeListP->size > 1) {
-        int* smallestNodes = getSmallest(treeListP);
-        int newInts[treeListP->nodes[smallestNodes[1]]->size + treeListP->nodes[smallestNodes[0]]->size];
-
-        for(i = 0; i < treeListP->nodes[smallestNodes[1]]->size; i++) {
-            newInts[place++] = treeListP->nodes[smallestNodes[1]]->contents[i];
-        }
-        for(i = 0; i < treeListP->nodes[smallestNodes[0]]->size; i++) {
-            newInts[place++] = treeListP->nodes[smallestNodes[0]]->contents[i];
-        }
-
-        treeListP->nodes[smallestNodes[1]] = createNode(newInts, treeListP->nodes[smallestNodes[1]]->size + treeListP->nodes[smallestNodes[0]]->size, 
-            treeListP->nodes[smallestNodes[1]]->freq + treeListP->nodes[smallestNodes[0]]->freq, 
-            treeListP->nodes[smallestNodes[1]], treeListP->nodes[smallestNodes[0]]);
-        
-        memmove(treeListP->nodes + smallestNodes[0], treeListP->nodes + smallestNodes[0] + 1, 
-            (treeListP->size - smallestNodes[0] - 1) * sizeof(Node*));
-        treeListP->size--;
-
-
-        return buildTree(treeListP);
-        }
-    return treeListP->nodes[0];*/
-
-    while (list->size > 1) {
-
-        int* smallest = getSmallest(list);;
-        int one = &smallest[1];
-        int zero = &smallest[0];
-        int newInts[list->nodes[one]->size + list->nodes[zero]->size];
-
-        int place = 0;
-
-        for(i = 0; i < list->nodes[one]->size; i++) {
-            newInts[place++] = list->nodes[one]->contents[i];
-        }
-        for (i = 0; i < list->nodes[zero]->size; i++) {
-            newInts[place++] = list->nodes[zero]->contents[i];
-        }
-        list->nodes[one] = createNode(newInts, list->nodes[one]->size + list->nodes[zero]->size, 
-            list->nodes[one]->freq + list->nodes[zero]->freq, 
-            list->nodes[one], list->nodes[zero]);
-        memmove(list->nodes + zero, list->nodes + zero + 1, (list->size - zero - 1) * sizeof(Node*));
-        list->size--;
-
-
-        return buildTree(list);
-        }
-    return list->nodes[0];
-
-    /*    int* smallest = getSmallest(list);
-        printf("%d", &smallest[1]);
-        int one = &smallest[1];
-        int zero = &smallest[0];
-        int newInts[list->nodes[one]->size + list->nodes[zero]->size];
-        int place = 0;
-        for(i = 0; i < list->nodes[one]->size; i++) {
-            newInts[place++] = list->nodes[one]->contents[i];
-        }
-        for (i = 0; i < list->nodes[zero]->size; i++) {
-            newInts[place++] = list->nodes[zero]->contents[i];
-        }
-        list->nodes[one] = createNode(newInts, list->nodes[one]->size + list->nodes[zero]->size, 
-            list->nodes[one]->freq + list->nodes[zero]->freq, 
-            list->nodes[one], list->nodes[zero]);
-        memmove(list->nodes + zero, list->nodes + zero + 1, (list->size - zero - 1) * sizeof(Node*));
-        list->size--;
-    return list->nodes[zero];*/
-}
-
-
-/*Construct an array of the Ascii Bit codes*/
-char** generateBitAsciiArray(Node* treeP) {
-    
-    int i;
-    char** bitArray = malloc(sizeof(char*) * 257);
-
-    for(i = 0; i < 257; i++) {
-        bitArray[i] = getCode(treeP, i, NULL);
-    }
-
-    return bitArray;
-}
-
-/*Find the corresponding bitCode for the Ascii char*/
-char* getCode(Node* nextP, int find, char* bitsP) {
-
-    int found, i;
-    char* newCharP;
-    /*Check that both the left and right nodes are not NULL/Empty*/
-    if (nextP->left && nextP->right) {
-
-        /* Allocate memory space for the bits array as part of the recursive function*/
-        if (bitsP == NULL) {
-            bitsP = malloc(1);
-            strcpy(bitsP, "");
-        }
-
-        /*Check to see if we have found the char we are looking for*/
-        found = 0;
-        for(i = 0; i < nextP->left->size; ++i) {
-            if(nextP->left->contents[i] == find) {
-                found = 1;
-            }
-        }
-
-        /*Choose which node to view next*/
-        newCharP = found ? "0" : "1";
-        nextP = strcmp(newCharP, "0") == 0 ? nextP->left : nextP->right;
-
-        /*Resize the bit string and add the new bit to the end of the string*/
-        bitsP = realloc(bitsP, strlen(bitsP) + 2);
-        strcat(bitsP, newCharP);
-
-        /*Recursivly call the function till we reach a base node*/
-        return getCode(nextP, find, bitsP);
-    }
-
-    return bitsP;
-}
-
-/* Find the smallest frequency of two nodes*/
-int* getSmallest(Tree* treeP) {
-
-    int smallestNode[2];
-    int i;
-
-    for (i = 0; i < treeP->size; i++)
-        if (treeP->nodes[i]->freq <= treeP->nodes[smallestNode[0]]->freq) {
-            smallestNode[1] = smallestNode[0];
-            smallestNode[0] = i;
-        }
-
-    if (smallestNode[1] == smallestNode[0]) {
-        smallestNode[1] = smallestNode[0] == 0 ? 1 : 0;
-        for(i = 0; i < treeP->size; i++)
-            if (i != smallestNode[0] && treeP->nodes[i]->freq < treeP->nodes[smallestNode[1]]->freq) {
-                smallestNode[1] = i;
-            }
-    }
-
-    return smallestNode;
-}
-
-/*Create a Tree of the frequency of chars of a read in file*/
-Tree* readFrequencyFile(char* filePathP) {
-
-    FILE* fp = fopen(filePathP, "r");
-
-    int* list = calloc(257, sizeof(int));
-    int ch, place = 0, size = 0;
-    char* charBuffer = malloc(1);
-    strcpy(charBuffer, "");
-    int prevPrevChar = -1, prevChar = -1, newChar = -1;
-
-    /*Loop through ever character in the file*/
-    for(ch = fgetc(fp); ch != EOF; ch = fgetc(fp)) {
-
-        /*If the place is 0 and the character is ' ' then we are at the end*/
-        if(place == 0 && ch == ' ') {
-            /*TODO: FIx This*/
-            /*size = atoi(charBuffer);*/
-            size = atoi(charBuffer);
-
-            free(charBuffer);
-            charBuffer = malloc(1);
-            strcpy(charBuffer, "");
-
-            place++;
-        }
-        /*if the place is greater than the size, then all reable Ascii chars have been read*/
-        else if(place > size) break;
-        /* Deal with spaces after numbers*/
-        else if (ch == ' ' && prevChar != ' ') {
-            /*TODO: Fix This*/
-            /*size = atoi(charBuffer);*/
-            list[newChar] = atoi(charBuffer);
-            place++;
-
-            free(charBuffer);
-            charBuffer = malloc(1);
-            strcpy(charBuffer, "");
-        } 
-        /*Deal with chars after numbers*/
-        else if(prevChar == ' ' && prevPrevChar != ' ') {
-            newChar = ch;
-        } 
-        /*Deal with numbers by adding them to the end of the Char Buffer*/
-        else {
-            /*Resize Char Buffer*/
-            charBuffer = realloc(charBuffer, strlen(charBuffer) + 2);
-            strcat(charBuffer, (char*) &ch);
-        }
-        prevPrevChar = prevChar;
-        prevChar = ch;
-    }
-
-    fclose(fp);
-    free(charBuffer);
-
-    /* 1 is used to signal end of file */
-    list[256] = 1;
-    size++;
-
-    /*Create an Tree from the list*/
-    Tree* freqTreeP = arrayFromList(list, size);
-
-    free(list);
-
-    return freqTreeP;
-}
-
-Tree* buildFrequencyFile(char* filePathP, char* outputPathP){
-    
-    FILE* fp = fopen(filePathP, "r");
-
-    int* list = calloc(257, sizeof(int));
-    int size = 0, ch, i;
-
-    /*Loop through each character in the file*/
-    for(ch = fgetc(fp); ch != EOF; ch = fgetc(fp)) {
-        
-        if (list[ch] == 0) {
-            size++;
-        }
-
-        list[ch]++;
-    }
-    fclose(fp);
-
-    /*Use 1 as end of File indicator*/
-    list[256] = 1;
-    size++;
-
-    /*Convert the list of frequencies to an tree*/
-    Tree* freqTreeP = arrayFromList(list, size);
-
-    /*check if an output file was specified for writing to*/
-    if(outputPathP) {
-        /*Write to this file*/
-        FILE* op = fopen(outputPathP, "w");
-    
-        fprintf(op, "%d ", size - 1);
-        for(i = 0; i < 256; i++)
-            /*if the frequency isn't 0, store the character and its frequency in the file*/
-            if(list[i] != 0) fprintf(op, "%c%d ", i, list[i]);
-        fclose(op);
-    }
-
-    free(list);
-    return freqTreeP;
-}
-
-Tree* arrayFromList(int* listP, int size) {
-     
-    Tree* freq = malloc(sizeof(Tree));
-    freq->nodes = malloc(sizeof(Node) * size);
-    int place = 0, i;
-
-    for(i = 0; i < 257; i++)
-        if(listP[i] != 0) {
-            freq->nodes[place++] = createBaseNode((int*) &i, listP[i]);
-        }
-    freq->size = size;
-    return freq;
-}
-
-void freeTree(Node* treeP) {
-    /*Free non base nodes*/
-    if (treeP->left && treeP->right) {
-        freeTree(treeP->left);
-        freeTree(treeP->right);
-        free(treeP->contents);
-        free(treeP);
-    /*Free base nodes*/
-    } 
-    else {
-        free(treeP->contents);
-        free(treeP);
-    }
-}
-
-void freeNodeArray(Tree* treeP) {
-
-    int i;
-    for (i = 0; i < treeP->size; i++) {
-        freeTree(treeP->nodes[i]);
-    }
-    free(treeP->nodes);
-    free(treeP);
-}
-
-void freeBitArray(char** arrP) {
-
-    int i;
-    for(i = 0; i < 257; i++) {
-        free(arrP[i]);
-    }
-    free(arrP);
-}
-
-/*TODO Document*/
-void compression(char* inputPath, char* outputPath, char** array) {
-
-    int ch;
-    /* TODO: Fix Teneray Operator */
-    FILE* rf = fopen(inputPath, "r");
-    FILE* wf = outputPath ? fopen(outputPath, "a") : NULL;
-
-    /*Initialize an empty string to act as the bit buffer*/
-    char* currentBits = malloc(1);
-    strcpy(currentBits, "");
-    /*Loop through every character in the file*/
-    for (ch = fgetc(rf); ch != EOF; ch = fgetc(rf)) {
-
-        currentBits = realloc(currentBits, strlen(currentBits) + strlen(array[ch]) + 1);
-        strcat(currentBits, array[ch]);
-        while(strlen(currentBits) >= 8) {
-            char bitString[9];
-            strncpy(bitString, currentBits, 8);
-            memmove(currentBits, currentBits + 8, strlen(currentBits) - 7);
-            if (wf) {
-                fputc(strtol(bitString, NULL, 2), wf);
-            }
-            else printf("%s", bitString);
-        }
-    }
-
-    fclose(rf);
-    currentBits = realloc(currentBits, strlen(currentBits) + strlen(array[256]) + 1);
-    strcat(currentBits, array[256]);
-    while(strlen(currentBits) % 8 != 0) {
-        currentBits = realloc(currentBits, strlen(currentBits) + 2);
-        strcat(currentBits, "0");
-    }
-   
-    while(strlen(currentBits) >= 8) {
-        char bitString[9];
-        strncpy(bitString, currentBits, 8);
-        memmove(currentBits, currentBits + 8, strlen(currentBits) - 7);
-        if (wf) fputc(strtol(bitString, NULL, 2), wf);
-        else printf("%s", bitString);
-    }
-
-    if(!wf) puts("");
-    free(currentBits);
-    if (wf) fclose(wf);
-}
-
-void compressFile(void) {
-
-    char* inFilePath = "in.txt";
-    char* outFilePath = "out.min";
-    Tree* x;
-    Node* top;
-
-    printf("Lets Compress\n");
-    printf("%s\n", inFilePath);
-    x = buildFrequencyFile(inFilePath, outFilePath);
-    top = buildTree(x);
-    char** array = generateBitAsciiArray(top);
-    compression(inFilePath, outFilePath, array);
-    freeBitArray(array);
-    freeNodeArray(x);
-
-
 }

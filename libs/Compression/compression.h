@@ -8,39 +8,40 @@
 #ifndef COMPRESSION_H
 #define COMPRESSION_H
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_CHAR  257   
+#define EOF_FLAG    256    
+#define CHAR_BIT_SIZE   8
+
+/*Structs*/
 typedef struct HuffmanNode Node; 
-typedef struct HuffmanTree Tree;
 
 struct HuffmanNode {
-    int* contents;
-    int size, freq;
-    Node* left;
-    Node* right;
+    int contents;
+    int frequency;
+    Node *leftP, *rightP;
 };
 
-struct HuffmanTree {
-    Node** nodes;
-    int size;
-};
+Node *buildHuffmanTree(int frequenciesArray[]);
+int compareNodes(const void *nodeOneP, const void *nodeTwo);
+char **buildCharacterTable( int frequenciesArray[]);
 
-Node* createNode(int *nodeContentsP, int nodeSize, int nodeFreq, Node* leftP, Node* rightP); 
-Node* createBaseNode(int *nodeContentsP, int freq);
-Node* buildTree(Tree* treeList);
-char** generateBitAsciiArray(Node* tree);
-char* getCode(Node* next, int find, char* bits);
-int* getSmallest(Tree* frequencies);
+void searchHuffmanTree(Node *treeP, char **tableP, char *toFindP);
+char *addPrefix(char *current, char prefix);
 
-Tree* readFrequencyFile(char* filePath);
-Tree* buildFrequencyFile(char* filePath, char* outputPath);
-Tree* arrayFromList(int* list, int size);
+void writeFileHeader(FILE *outFile, int frequenciesArray[]);
+int *readFileHeader(FILE *inFile);
 
-void freeTree(Node* tree);
-void freeNodeArray(Tree* tree);
-void freeBitArray(char** arr);
+void encodeBit(const char *bitArrayP, FILE *outFileP);
+int decodeBit(FILE *inFileP);
+int bitToChar(FILE *inFileP, Node *treeP);
+void freeHuffmanTree(Node *treeP);
+void freeTable(char *tableP[]);
+void encodeFile(FILE *in, FILE *out);
+void decodeFile(FILE *in, FILE *out);
 
-void compression(char* inputPath, char* outputPath, char** array);
-void decompressFile(char* inputPath, char* outputPath,  Node* tree, int size);
-
-void compressFile();
 
 #endif

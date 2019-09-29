@@ -4,162 +4,279 @@
  * 	Jake Roeleven
  * Date Complete:
 *******************************************************************************/
-#include<stdio.h>
-#include<stdlib.h>
-#include<string.h>
+
 #include "compression.h"
 
+int main() {
+    FILE *inFileP, *outFileP;
+    inFileP = fopen("text.txt", "rb");
+    outFileP = fopen("out.min", "wb");
 
+    encodeFile(inFileP, outFileP);
 
+    fclose(inFileP);
+    fclose(outFileP);
 
+    inFileP = fopen("out.min", "rb");
+    outFileP = fopen("out.txt", "wb");
 
+    decodeFile(inFileP, outFileP);
 
+    fclose(inFileP);
+    fclose(outFileP);
 
-
-
-void freeNodeArray(NodeArray* tree) {
-    //loop through the array of nodes and free each node tree inside of it
-    for (int i = 0; i < tree->size; i++)
-        freeTree(tree->nodes[i]);
-    //free the array of nodes
-    free(tree->nodes);
-    //free the node array itself
-    free(tree);
+    return 0;
 }
-
-void freeBitArray(char** arr) {
-    //loop through the array of string and free each string inside of it
-    for(int i = 0; i < 257; i++)
-        free(arr[i]);
-    //free the array itself
-    free(arr);
-}
-
-void compressFile(char* inputPath, char* outputPath, char** array) {
-    //open the input file for reading
-    FILE* rf = fopen(inputPath, "r");
-    //open the output file as an append so that we don't overwrite the character frequencies
-    //if a file isn't passed in, then we just set the file to NULL
-    FILE* wf = outputPath ? fopen(outputPath, "a") : NULL;
-    //initialize an empty string to act as the bit buffer
-    char* currentBits = malloc(1);
-    strcpy(currentBits, "");
-    //loop through every character in the file
-    for (int ch = fgetc(rf); ch != EOF; ch = fgetc(rf)) {
-        //increase the size of the bit buffer to add the new bits
-        currentBits = realloc(currentBits, strlen(currentBits) + strlen(array[ch]) + 1);
-        //add the new bits to the bit buffer
-        strcat(currentBits, array[ch]);
-        //if and while the strlen of the bit buffer is greater than 8, we have full characters
-        //we can write to the file, and we want to keep the bit buffer as small as we can
-        while(strlen(currentBits) >= 8) {
-            //we create a temp bit string to hold the first 8 bits in the bit buffer
-            char bitString[9];
-            //copy the first 8 bits of the bit buffer to the temp bit string
-            strncpy(bitString, currentBits, 8);
-            //set the terminating character of the bit string
-            //remove the first 8 bits from the bit buffer
-            memmove(currentBits, currentBits + 8, strlen(currentBits) - 7);
-            //if the output file isn't NULL conver the bit string to a base 10 character and
-            //write that character to the file
-            if (wf) fputc(strtol(bitString, NULL, 2), wf);
-            //if the output file is NULL, then we just print the bits to the screen
-            else printf("%s", bitString);
+/*Build a Huffman Tree and populate it based on the 
+  frequencies pased in */
+Node *buildHuffmanTree(int frequencies[]) {
+    /* Variables */
+    int i, len = 0;
+    Node *queue[MAX_CHAR];
+    
+    /* create trees for each character, add to the queue */
+    for(i = 0; i < MAX_CHAR; i++)
+    {
+        if(frequencies[i])
+        {
+            Node *toadd = (Node *)calloc(1, sizeof(Node));
+            toadd->contents = i;
+            toadd->frequency = frequencies[i];
+            queue[len++] = toadd;
         }
     }
-    //clase the file since we are done reading it
-    fclose(rf);
-    //increase the size of our bit buffer to hold the new bits
-    currentBits = realloc(currentBits, strlen(currentBits) + strlen(array[256]) + 1);
-    //add the new bits to the bit buffer
-    strcat(currentBits, array[256]);
-    //while the length of the bit buffer isn't divisible by 8
-    while(strlen(currentBits) % 8 != 0) {
-        //add a 0 to the end of the bit buffer to pad the end with zeros so that it is writable
-        //as characters
-        currentBits = realloc(currentBits, strlen(currentBits) + 2);
-        strcat(currentBits, "0");
+    
+    while(len > 1)
+    {
+        Node *toadd = (Node *)malloc(sizeof(Node));
+        
+        /* sort - smallest frequency trees are last */
+        qsort(queue, len, sizeof(Node *), compareNodes);
+        
+        /* dequeue two lowest frequency trees, build new tree from them */
+        toadd->leftP = queue[--len];
+        toadd->rightP = queue[--len];
+        toadd->frequency = toadd->leftP->frequency + toadd->rightP->frequency;
+        
+        queue[len++] = toadd; /* insert back in the queue */
     }
-    //while the strlen of the bit buffer is 8 or greater write the bits so that we write every bit needed
-    while(strlen(currentBits) >= 8) {
-        //we create a temp bit string to hold the first 8 bits in the bit buffer
-        char bitString[9];
-        //copy the first 8 bits of the bit buffer to the temp bit string
-        strncpy(bitString, currentBits, 8);
-        //remove the first 8 bits from the bit buffer
-        memmove(currentBits, currentBits + 8, strlen(currentBits) - 7);
-        //if the output file isn't NULL conver the bit string to a base 10 character and
-        //write that character to the file
-        if (wf) fputc(strtol(bitString, NULL, 2), wf);
-        //if the output file is NULL, then we just print the bits to the screen
-        else printf("%s", bitString);
-    }
-    //if the bits are being printed to the screen, add a new line for better viewing
-    if(!wf) puts("");
-    //free the bit buffer
-    free(currentBits);
-    //if we are writing to a file, close the file we used for writing
-    if (wf) fclose(wf);
+    
+    return queue[0];
 }
 
-/*
- * decode(char* inputPath, char* outputPath, Node* tree, int size) -
- * takes the file at 'inputPath' and converts the bits back to the corresponding
- * characters from the tree passed in, also takes in the size of the tree to know
- * how many places to skip for the letter frequencies stored in the file
- */
-void decompressFile(char* inputPath, char* outputPath, Node* tree, int size) {
-    //open the input file for reading
-    FILE* rf = fopen(inputPath, "r");
-    //open the output file as an append so that we don't overwrite the character frequencies
-    //if a file isn't passed in, then we just set the file to NULL
-    FILE* wf = outputPath ? fopen(outputPath, "w") : NULL;
-    //set a current node at the top of the tree to help follow the tree down to a character from bits
-    Node* currentNode = tree;
-    //add a counter to keep track of first few lines to skip the character frequencies stored in the
-    //compressed file
-    int counter = 0;
-    //initialize the previous character to -1
-    int prevChar = -1;
-    //loop through each character in the input file
-    for(int ch = fgetc(rf); ch != EOF; ch = fgetc(rf)) {
-        //if the character is ' ', the previous character isn't ' ', and the counter is less than the size + 1,
-        //then increase the counter because we are still in the frequency part of the file
-        if(ch == ' ' && prevChar != ' ' && counter < size) counter++;
-        //once the counter is greater than the size + 1, we are outside of the frequencies portion of the file
-        else if(counter >= size)
-            //loop through each bit in the current character
-            for(int j = 0; j < (8*sizeof(int) + 1); j++) {
-                //if the tree is at a base node, then we need to get the current character
-                if (!currentNode->left && !currentNode->right) {
-                    //if the decompressed character is our pseudo EOF character
-                    if(currentNode->contents[0] == 256) {
-                        //close reading file
-                        fclose(rf);
-                        //if we have a writing file, we close that as well
-                        if(wf) fclose(wf);
-                        //return out of the function
-                        return;
-                    }
-                    //if the character isn't our pseudo EOF character we continue
-                    //if we have a output file
-                    if(wf)
-                        //add the new character to the end of the file
-                        fprintf(wf, "%c", currentNode->contents[0]);
-                    //if we don't have an output file
-                    else
-                        //print the character to the screen
-                        printf("%c", currentNode->contents[0]);
-                    //set the current node to the top of the tree
-                    currentNode = tree;
-                }
-                //loop through the last 8 bits of the integer so that we only get the character bits
-                if(j > 23 && j < 32)
-                    //set the current node to the left or right depending on if the bit is a 1 or 0 respectively
-                    currentNode = (ch << j) & (1 << (8*sizeof(int)-1)) ? currentNode->right : currentNode->left;
-            }
-        //set the previous character to the what is now the current character
-        prevChar = ch;
+/* TODO Document and Optamize */
+int compareNodes(const void *nodeOneP, const void *nodeTwoP) {
+   
+    const Node** nodeAPP = (const Node**) nodeOneP;
+    const Node** nodeBPP = (const Node**) nodeTwoP;
+
+    /*If frequencies are the same*/
+    if ((*nodeAPP)->frequency == (*nodeBPP)->frequency) {
+        return 0;
+    }
+    else {
+        return ((*nodeAPP)->frequency < (*nodeBPP)->frequency) ? 1 : -1;
     }
 }
+
+char **buildCharacterTable( int frequenciesArray[]) {
+    static char *tableP[MAX_CHAR];
+    char *toFindP = (char *)calloc(1, sizeof(char));
+    Node* treeP = buildHuffmanTree(frequenciesArray);
+    searchHuffmanTree(treeP, tableP, toFindP); 
+    freeHuffmanTree(treeP);
+
+    return tableP;
+}
+
+void searchHuffmanTree(Node *treeP, char **tableP, char *toFindP) {
+    
+    if (!treeP->leftP && !treeP->rightP) {
+        tableP[treeP->contents] = toFindP;
+    }
+
+    else {
+        if(treeP->leftP) {
+            searchHuffmanTree(treeP->leftP, tableP, addPrefix(toFindP, '0'));
+        }
+        if(treeP->rightP) {
+            searchHuffmanTree(treeP->rightP, tableP, addPrefix(toFindP, '1'));
+        } 
+        free(toFindP);
+    }
+}
+
+char *addPrefix(char *currentP, char prefix) {
+    char *newChar = (char *)malloc(strlen(currentP) + 2);
+    sprintf(newChar, "%s%c", currentP, prefix);
+    return newChar;
+}
+
+void writeFileHeader(FILE *outFile, int frequenciesArray[]) {
+    
+    int i, count = 0;
+    
+    for (i = 0; i < MAX_CHAR; i++) if (frequenciesArray[i]) count++;
+    fprintf(outFile, "%d\n", count);
+    for (i = 0; i < MAX_CHAR; i++) {
+        if (frequenciesArray[i]) {
+            fprintf(outFile, "%d %d\n", i, frequenciesArray[i]);
+        }
+    }
+
+}
+
+int *readFileHeader(FILE *inFile) {
+    
+    /*static int frequenciesArray[MAX_CHAR];
+    int i, count, current, frequency;
+
+    if (fscanf(inFile, "%d", &count) != 1) {
+        printf("Invalid file format!");
+        exit(1);;
+    }
+
+    for (i = 0; i < count; i++) {
+        if(fscanf(inFile, "%d %d", &current, & frequency) != 2) {
+            if (current < 0 || current >=MAX_CHAR) {
+                printf("Invalid file format");
+                exit(1);;
+            }
+            frequenciesArray[current] = frequency;
+        }
+    }
+
+    return frequenciesArray;*/
+    static int frequencies[MAX_CHAR];
+    int i, count, letter, freq;
+    
+    if(fscanf(inFile, "%d", &count) != 1) printf("invalid input file.");
+    
+    for(i = 0; i < count; i++)
+    {
+        if((fscanf(inFile, "%d %d", &letter, &freq) != 2)
+           || letter < 0 || letter >= MAX_CHAR) printf("invalid input file.");
+        
+        frequencies[letter] = freq;
+    }
+    fgetc(inFile); /* discard last newline */
+    
+    return frequencies;
+}
+
+/*TODO Fix*/
+void encodeBit(const char *encoding, FILE *out)
+{
+    /* buffer holding raw bits and number of bits filled */
+    static int bits = 0, bitcount = 0;
+    
+    while(*encoding)
+    {
+        /* push bits on from the right */
+        bits = bits * 2 + *encoding - '0';
+        bitcount++;
+        
+        /* when we have filled the char, output as a single character */
+        if(bitcount == 8)
+        {
+            fputc(bits, out);
+            bits = 0;
+            bitcount = 0;
+        }
+        
+        encoding++;
+    }
+}
+
+int decodeBit(FILE *inFileP) {
+
+    static int bits = 0, bitCount = 0;
+    int nextBit;
+
+    if (bitCount == 0) {
+        bits = fgetc(inFileP);
+        bitCount = (1 << (CHAR_BIT_SIZE - 1));
+    }
+
+    nextBit = bits / bitCount;
+    bits %= bitCount;
+    bitCount /= 2;
+
+    return nextBit;
+
+}
+
+int bitToChar(FILE *inFileP, Node *treeP) {
+    while (treeP->leftP || treeP->rightP) {
+        if (decodeBit(inFileP)) {
+            treeP = treeP->rightP;
+        }
+        else {
+            treeP = treeP->leftP;
+        }
+        if(!treeP) {
+            printf("Error file format");
+            exit(1);;
+        }
+    }
+    return treeP->contents;
+}
+
+void freeHuffmanTree(Node *treeP) {
+    if (treeP) {
+        freeHuffmanTree(treeP->leftP);
+        freeHuffmanTree(treeP->rightP);
+        free (treeP);
+    }
+}
+
+void freeTable(char *tableP[]) {
+    int i;
+    for (i = 0; i < MAX_CHAR; i++) {
+        if (tableP[i]) {
+            free(tableP[i]);
+        }
+    }
+}
+
+void encodeFile(FILE *in, FILE *out) {
+    int c, frequencies[MAX_CHAR] = {0};
+    char **table;
+    
+    while((c = fgetc(in)) != EOF) frequencies[c]++;
+    
+    frequencies[EOF_FLAG] = 1;
+    rewind(in);
+    
+    table = buildCharacterTable(frequencies);
+    writeFileHeader(out, frequencies);
+    
+    while((c = fgetc(in)) != EOF)
+        encodeBit(table[c], out);
+    
+    /* use FAKE_EOF to indicate end of input */
+    encodeBit(table[EOF_FLAG], out);
+    
+    /* write an extra 8 blank bits to flush the output buffer */
+    encodeBit("0000000", out);
+    
+    freeTable(table);
+}
+
+/*TODO Document*/
+void decodeFile(FILE *in, FILE *out) {
+    int *frequencies, c;
+    Node *tree;
+    
+    frequencies = readFileHeader(in);
+    tree = buildHuffmanTree(frequencies);
+    
+    while((c = bitToChar(in, tree)) != EOF_FLAG) {
+        fputc(c, out);
+    }
+    
+    freeHuffmanTree(tree);
+}
+
+ 
 
