@@ -1,0 +1,3 @@
+*.min
+*.out
+testFile.txt

@@ -8,25 +8,75 @@
 #include "compression.h"
 
 int main() {
+    Compress();
+    Decompress();
+    return 0;
+}
+
+void Compress() {
+    printf("Name the file you wish to compress?\n");
+    
+    char inFileName[1024];
+    char outFileName[1024];
+    
+    scanf("%s", inFileName);
+    strcpy(outFileName, inFileName);
+    removeFileExtension(outFileName);
+    strcat(outFileName, ".min");
+
     FILE *inFileP, *outFileP;
-    inFileP = fopen("text.txt", "rb");
-    outFileP = fopen("out.min", "wb");
+
+    inFileP = fopen(inFileName, "rb");
+    if(inFileP == NULL){
+      printf("Error! That file does not exist!");   
+      exit(1);             
+    }
+
+
+    outFileP = fopen(outFileName, "wb");
+
+    printf("Compressing");
+    printf(".");
+    printf(".");
+    printf(".\n");
 
     encodeFile(inFileP, outFileP);
 
     fclose(inFileP);
     fclose(outFileP);
+    printf("Success: your file can be found at %s\n", outFileName);
+}
 
-    inFileP = fopen("out.min", "rb");
-    outFileP = fopen("out.txt", "wb");
+void Decompress() {
+    printf("Name the file you wish to Decompress?\n");
+    char inFileName[1024];
+    char outFileName[1024];
+    scanf("%s", inFileName);
 
+    FILE *inFileP, *outFileP;
+    inFileP = fopen(inFileName, "rb");
+    strcpy(outFileName, inFileName);
+    removeFileExtension(outFileName);
+    strcat(outFileName, ".txt");
+
+    if(inFileP == NULL){
+      printf("Error! That file does not exist!");   
+      exit(1);             
+    }
+    outFileP = fopen(outFileName, "wb");
+    if(outFileP == NULL){
+      printf("Error! That file does not exist!");   
+      exit(1);             
+    }
+
+    printf("Decompressing...\n");
     decodeFile(inFileP, outFileP);
 
     fclose(inFileP);
     fclose(outFileP);
-
-    return 0;
+    printf("Success: your file can be found at %s\n", outFileName);
 }
+
 /*Build a Huffman Tree and populate it based on the 
   frequencies pased in */
 Node *buildHuffmanTree(int frequencies[]) {
@@ -276,6 +326,12 @@ void decodeFile(FILE *in, FILE *out) {
     }
     
     freeHuffmanTree(tree);
+}
+
+char* removeFileExtension(char* str) {
+    size_t strLen = strlen(str);
+    str[4 <= strLen ? strLen-4 : 0] = '\0';
+    return str;
 }
 
  

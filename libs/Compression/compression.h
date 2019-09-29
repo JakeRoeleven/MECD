@@ -43,5 +43,10 @@ void freeTable(char *tableP[]);
 void encodeFile(FILE *in, FILE *out);
 void decodeFile(FILE *in, FILE *out);
 
+void Compress();
+void Decompress();
+
+char* removeFileExtension(char* str);
+
 
 #endif
