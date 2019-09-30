@@ -1,48 +1,57 @@
 /*******************************************************************************
  * 48430 Fundamentals of C Programming - Group Assignment
- * Authors:
- * 	Jake Roeleven
+ * 
+ * Huffman Compression
+ * 
+ * Author(s):
+ *  Jake Roeleven - 13246638
  * Date Complete:
+ *  30/05/2019
+ * Notes: 
+ *  The follwoing refrences were used to help complete this algorithm:
+ *  - https://en.wikipedia.org/wiki/Huffman_coding
+ *  - https://www.geeksforgeeks.org/huffman-coding-greedy-algo-3/
+ *  - https://gitlab.com/mehalter/Huffman-Coding-C/blob/master/huffman.c
+ *  - https://github.com/DanielScocco/Simple-Huffman-Coding/blob/master/huffman.c
 *******************************************************************************/
 
+/*Inclusions*/
 #include "compression.h"
 
+/*Testing purposes TODO: Delete*/
 int main() {
     Compress();
     Decompress();
     return 0;
 }
 
+/*Main function to call compression*/
 void Compress() {
     
+    char inFileName[1024], outFileName[1024];
+    FILE *inFileP, *outFileP;
+    long int inFileSize, outFileSize;
+    
     printf("Name the file you wish to compress?\n");
-    
-    char inFileName[1024];
-    char outFileName[1024];
-    
     scanf("%s", inFileName);
-    printCompress();
+    
+    printf("\nCompressing...");
 
+    inFileP = fopen(inFileName, "rb");
     strcpy(outFileName, inFileName);
     removeFileExtension(outFileName);
     strcat(outFileName, ".min");
-
-    FILE *inFileP, *outFileP;
-
-    inFileP = fopen(inFileName, "rb");
-    
-    if(inFileP == NULL){
-      printf("Error! That file does not exist!");   
-      exit(1);             
-    }
-
-
     outFileP = fopen(outFileName, "wb");
+    
+    if(inFileP == NULL) {
+        printf("Error! That file does not exist!");   
+        exit(1);             
+    }
 
     encodeFile(inFileP, outFileP);
 
-    long int inFileSize = findFileSize(inFileP);
-    long int outFileSize = findFileSize(outFileP);
+    inFileSize = findFileSize(inFileP);
+    outFileSize = findFileSize(outFileP);
     
     printFileStats(inFileSize, outFileSize);
     printf("Your file can now be found at: %s\n\n", outFileName);
@@ -53,93 +62,74 @@ void Compress() {
     deleteFile(inFileName);
 }
 
+/*Main function to call decompression*/
 void Decompress() {
-    printf("Name the file you wish to decompress?\n");
-    
-    char inFileName[1024];
-    char outFileName[1024];
-    
-    scanf("%s", inFileName);
-    printf("\nDecompressing...\n");
 
+    char inFileName[1024], outFileName[1024];
     FILE *inFileP, *outFileP;
+    
+    printf("Name the file you wish to decompress?\n");
+    scanf("%s", inFileName);
 
-    inFileP = fopen(inFileName, "rb");
+    printf("\nDecompressing...\n");
     
     strcpy(outFileName, inFileName);
     removeFileExtension(outFileName);
     strcat(outFileName, ".txt");
 
-    if(inFileP == NULL){
-      printf("Error! That file does not exist!");   
-      exit(1);             
+    inFileP = fopen(inFileName, "rb");
+    outFileP = fopen(outFileName, "wb");
+
+    if(inFileP == NULL) {
+        printf("Error! That file does not exist!");   
+        exit(1);             
     }
 
-    outFileP = fopen(outFileName, "wb");
     decodeFile(inFileP, outFileP);
+
+    printf("Success!\nYour file can be found at: %s\n\n", outFileName);
 
     fclose(inFileP);
     fclose(outFileP);
 
     deleteFile(inFileName);
-
-    printf("Success!\nYour file can be found at: %s\n\n", outFileName);
 }
 
-/*Build a Huffman Tree and populate it based on the 
-  frequencies pased in */
-Node *buildHuffmanTree(int frequencies[]) {
-    /* Variables */
-    int i, len = 0;
-    Node *queue[MAX_CHAR];
+/*Build a Huffman Tree and populate it based on the frequencies pased in */
+Node *buildHuffmanTree(int frequenciesArray[]) {
     
-    /* create trees for each character, add to the queue */
-    for(i = 0; i < MAX_CHAR; i++)
-    {
-        if(frequencies[i])
-        {
-            Node *toadd = (Node *)calloc(1, sizeof(Node));
-            toadd->contents = i;
-            toadd->frequency = frequencies[i];
-            queue[len++] = toadd;
+    int i, length = 0;
+    Node *NodelistP[MAX_CHAR_RANGE];
+    
+    for(i = 0; i < MAX_CHAR_RANGE; i++) {
+        if(frequenciesArray[i]) {
+            Node *currentNodeP = (Node *)calloc(1, sizeof(Node));
+            currentNodeP->contents = i;
+            currentNodeP->frequency = frequenciesArray[i];
+            NodelistP[length++] = currentNodeP;
         }
     }
     
-    while(len > 1)
-    {
-        Node *toadd = (Node *)malloc(sizeof(Node));
+    while(length > 1) {
+        Node *currentNodeP = (Node *)malloc(sizeof(Node));
+        qsort(NodelistP, length, sizeof(Node *), compareNodes);
+
+        currentNodeP->leftP = NodelistP[--length];
+        currentNodeP->rightP = NodelistP[--length];
+
+        currentNodeP->frequency = currentNodeP->leftP->frequency + 
+                                 currentNodeP->rightP->frequency;
         
-        /* sort - smallest frequency trees are last */
-        qsort(queue, len, sizeof(Node *), compareNodes);
-        
-        /* dequeue two lowest frequency trees, build new tree from them */
-        toadd->leftP = queue[--len];
-        toadd->rightP = queue[--len];
-        toadd->frequency = toadd->leftP->frequency + toadd->rightP->frequency;
-        
-        queue[len++] = toadd; /* insert back in the queue */
+        NodelistP[length++] = currentNodeP;
     }
     
-    return queue[0];
+    return NodelistP[0];
 }
 
-/* TODO Document and Optamize */
-int compareNodes(const void *nodeOneP, const void *nodeTwoP) {
-   
-    const Node** nodeAPP = (const Node**) nodeOneP;
-    const Node** nodeBPP = (const Node**) nodeTwoP;
-
-    /*If frequencies are the same*/
-    if ((*nodeAPP)->frequency == (*nodeBPP)->frequency) {
-        return 0;
-    }
-    else {
-        return ((*nodeAPP)->frequency < (*nodeBPP)->frequency) ? 1 : -1;
-    }
-}
-
-char **buildCharacterTable( int frequenciesArray[]) {
-    static char *tableP[MAX_CHAR];
+/*Build a table to list the nodes to chars*/
+char **buildCharacterTable(int frequenciesArray[]) {
+    
+    static char *tableP[MAX_CHAR_RANGE];
     char *toFindP = (char *)calloc(1, sizeof(char));
     Node* treeP = buildHuffmanTree(frequenciesArray);
     searchHuffmanTree(treeP, tableP, toFindP); 
@@ -148,139 +138,182 @@ char **buildCharacterTable( int frequenciesArray[]) {
     return tableP;
 }
 
+/*Recursivly search the huffman tree till we react a node with no neighbours*/
 void searchHuffmanTree(Node *treeP, char **tableP, char *toFindP) {
     
-    if (!treeP->leftP && !treeP->rightP) {
-        tableP[treeP->contents] = toFindP;
-    }
+    if (!treeP->leftP && !treeP->rightP) tableP[treeP->contents] = toFindP;
 
     else {
         if(treeP->leftP) {
-            searchHuffmanTree(treeP->leftP, tableP, addPrefix(toFindP, '0'));
+            searchHuffmanTree(treeP->leftP, tableP, concatSuffix(toFindP, '0'));
         }
         if(treeP->rightP) {
-            searchHuffmanTree(treeP->rightP, tableP, addPrefix(toFindP, '1'));
+            searchHuffmanTree(treeP->rightP, tableP, concatSuffix(toFindP, '1'));
         } 
         free(toFindP);
     }
 }
 
-char *addPrefix(char *currentP, char prefix) {
-    char *newChar = (char *)malloc(strlen(currentP) + 2);
-    sprintf(newChar, "%s%c", currentP, prefix);
-    return newChar;
+/*Compare nodes and return a int based on which one is bigger*/
+int compareNodes(const void *nodeOneP, const void *nodeTwoP) {
+   
+    const Node** nodeAPP = (const Node**) nodeOneP;
+    const Node** nodeBPP = (const Node**) nodeTwoP;
+
+    if ((*nodeAPP)->frequency == (*nodeBPP)->frequency) return 0;
+    else if ((*nodeAPP)->frequency < (*nodeBPP)->frequency) return 1;
+    else return -1;
 }
 
-void writeFileHeader(FILE *outFile, int frequenciesArray[]) {
+/*Write the file header to decode the file*/
+void writeFileHeader(FILE *outFileP, int frequenciesArray[]) {
     
     int i, count = 0;
     
-    for (i = 0; i < MAX_CHAR; i++) if (frequenciesArray[i]) count++;
-    fprintf(outFile, "%d\n", count);
-    for (i = 0; i < MAX_CHAR; i++) {
+    for (i = 0; i < MAX_CHAR_RANGE; i++) {
         if (frequenciesArray[i]) {
-            fprintf(outFile, "%d %d\n", i, frequenciesArray[i]);
+            count++;
         }
     }
 
+    fprintf(outFileP, "%d\n", count);
+
+    for (i = 0; i < MAX_CHAR_RANGE; i++) {
+        if (frequenciesArray[i]) {
+            fprintf(outFileP, "%d %d\n", i, frequenciesArray[i]);
+        }
+    }
 }
 
-int *readFileHeader(FILE *inFile) {
-    
-    /*static int frequenciesArray[MAX_CHAR];
-    int i, count, current, frequency;
+/*Read file headers to then decode the file*/
+int *readFileHeader(FILE *inFileP) {
 
-    if (fscanf(inFile, "%d", &count) != 1) {
-        printf("Invalid file format!");
-        exit(1);;
-    }
-
-    for (i = 0; i < count; i++) {
-        if(fscanf(inFile, "%d %d", &current, & frequency) != 2) {
-            if (current < 0 || current >=MAX_CHAR) {
-                printf("Invalid file format");
-                exit(1);;
-            }
-            frequenciesArray[current] = frequency;
-        }
-    }
-
-    return frequenciesArray;*/
-    static int frequencies[MAX_CHAR];
+    static int frequenciesArray[MAX_CHAR_RANGE];
     int i, count, letter, freq;
     
-    if(fscanf(inFile, "%d", &count) != 1) printf("invalid input file.");
-    
-    for(i = 0; i < count; i++)
-    {
-        if((fscanf(inFile, "%d %d", &letter, &freq) != 2)
-           || letter < 0 || letter >= MAX_CHAR) printf("invalid input file.");
-        
-        frequencies[letter] = freq;
+    if(fscanf(inFileP, "%d", &count) != 1) {
+        printf("Invalid input file!");
     }
-    fgetc(inFile); /* discard last newline */
     
-    return frequencies;
-}
-
-/*TODO Fix*/
-void encodeBit(const char *encoding, FILE *out)
-{
-    /* buffer holding raw bits and number of bits filled */
-    static int bits = 0, bitcount = 0;
-    
-    while(*encoding)
-    {
-        /* push bits on from the right */
-        bits = bits * 2 + *encoding - '0';
-        bitcount++;
-        
-        /* when we have filled the char, output as a single character */
-        if(bitcount == 8)
-        {
-            fputc(bits, out);
-            bits = 0;
-            bitcount = 0;
+    for(i = 0; i < count; i++) {
+        if((fscanf(inFileP, "%d %d", &letter, &freq) != 2) || letter < 0 || letter >= MAX_CHAR_RANGE) {
+            printf("invalid input file.");
         }
         
-        encoding++;
+        frequenciesArray[letter] = freq;
+    }
+
+    fgetc(inFileP); 
+    
+    return frequenciesArray;
+}
+
+/*Add the encoded bit array to the file*/
+void encodeBit(const char *charArrayP, FILE *outFileP) {
+    
+    static int bit = 0, bitCount = 0;
+    
+    while(*charArrayP) {
+
+        bit = bit * 2 + *charArrayP - '0';
+        bitCount++;
+        
+        if(bitCount == 8) {
+            fputc(bit, outFileP);
+            bit = 0;
+            bitCount = 0;
+        }
+        
+        charArrayP++;
     }
 }
 
+/*Get the encoded bit array from the file*/
 int decodeBit(FILE *inFileP) {
 
-    static int bits = 0, bitCount = 0;
+    static int bit = 0, bitCount = 0;
     int nextBit;
 
     if (bitCount == 0) {
-        bits = fgetc(inFileP);
+        bit = fgetc(inFileP);
         bitCount = (1 << (CHAR_BIT_SIZE - 1));
     }
 
-    nextBit = bits / bitCount;
-    bits %= bitCount;
+    nextBit = bit/bitCount;
+    bit %= bitCount;
     bitCount /= 2;
 
     return nextBit;
-
 }
 
+/*Convert the bit array to a readble char*/
 int bitToChar(FILE *inFileP, Node *treeP) {
+
     while (treeP->leftP || treeP->rightP) {
-        if (decodeBit(inFileP)) {
+        if(!treeP) {
+            printf("Error file format");
+            exit(1);;
+        }
+        else if (decodeBit(inFileP)) {
             treeP = treeP->rightP;
         }
         else {
             treeP = treeP->leftP;
         }
-        if(!treeP) {
-            printf("Error file format");
-            exit(1);;
-        }
     }
     return treeP->contents;
 }
 
+/*Add a digit to the end of a char string and associated memory managment*/
+char *concatSuffix(char *currentP, char suffix) {
+    char *newChar = (char *)malloc(strlen(currentP) + 2);
+    sprintf(newChar, "%s%c", currentP, suffix);
+    return newChar;
+}
+
+/*Structue processing for encoding a file*/
+void encodeFile(FILE *inFileP, FILE *outFileP) {
+    
+    int c, frequenciesArray[MAX_CHAR_RANGE] = {0};
+    char **tablePP;
+    
+    while((c = fgetc(inFileP)) != EOF) {
+        frequenciesArray[c]++;
+    } 
+    
+    frequenciesArray[EOF_FLAG] = 1;
+    rewind(inFileP);
+    
+    tablePP = buildCharacterTable(frequenciesArray);
+    writeFileHeader(outFileP, frequenciesArray);
+    
+    while((c = fgetc(inFileP)) != EOF) {
+        encodeBit(tablePP[c], outFileP);
+    }
+    
+    encodeBit(tablePP[EOF_FLAG], outFileP);
+    encodeBit("0000000", outFileP);
+    
+    freeTable(tablePP);
+}
+
+/*Structue processing for encoding a file*/
+void decodeFile(FILE *inFileP, FILE *outFileP) {
+    
+    int *frequenciesArray, c;
+    Node *treePP;
+    
+    frequenciesArray = readFileHeader(inFileP);
+    treePP = buildHuffmanTree(frequenciesArray);
+    
+    while((c = bitToChar(inFileP, treePP)) != EOF_FLAG) {
+        fputc(c, outFileP);
+    }
+    
+    freeHuffmanTree(treePP);
+}
+
+/*Free the allocated memory space of the Huffman tree*/
 void freeHuffmanTree(Node *treeP) {
     if (treeP) {
         freeHuffmanTree(treeP->leftP);
@@ -289,64 +322,29 @@ void freeHuffmanTree(Node *treeP) {
     }
 }
 
+/*Free the allocated memory space of the table*/
 void freeTable(char *tableP[]) {
     int i;
-    for (i = 0; i < MAX_CHAR; i++) {
+    for (i = 0; i < MAX_CHAR_RANGE; i++) {
         if (tableP[i]) {
             free(tableP[i]);
         }
     }
 }
 
-void encodeFile(FILE *in, FILE *out) {
-    int c, frequencies[MAX_CHAR] = {0};
-    char **table;
-    
-    while((c = fgetc(in)) != EOF) frequencies[c]++;
-    
-    frequencies[EOF_FLAG] = 1;
-    rewind(in);
-    
-    table = buildCharacterTable(frequencies);
-    writeFileHeader(out, frequencies);
-    
-    while((c = fgetc(in)) != EOF)
-        encodeBit(table[c], out);
-    
-    /* use FAKE_EOF to indicate end of input */
-    encodeBit(table[EOF_FLAG], out);
-    
-    /* write an extra 8 blank bits to flush the output buffer */
-    encodeBit("0000000", out);
-    
-    freeTable(table);
+/*remoce the last four letter of the file*/
+char* removeFileExtension(char* fileNameP) {
+    size_t nameLength = strlen(fileNameP);
+    fileNameP[4 <= nameLength ? nameLength-4 : 0] = '\0';
+    return fileNameP;
 }
 
-/*TODO Document*/
-void decodeFile(FILE *in, FILE *out) {
-    int *frequencies, c;
-    Node *tree;
-    
-    frequencies = readFileHeader(in);
-    tree = buildHuffmanTree(frequencies);
-    
-    while((c = bitToChar(in, tree)) != EOF_FLAG) {
-        fputc(c, out);
-    }
-    
-    freeHuffmanTree(tree);
+/*Delete the file*/
+void deleteFile(char* inFileNameP) {
+   remove(inFileNameP);
 }
 
-char* removeFileExtension(char* str) {
-    size_t strLen = strlen(str);
-    str[4 <= strLen ? strLen-4 : 0] = '\0';
-    return str;
-}
-
-void deleteFile(char* inFileName) {
-   remove(inFileName);
-}
-
+/*Find the file size*/
 long int findFileSize(FILE *inFileP) {
     
     fseek(inFileP, 0L, SEEK_END); 
@@ -356,6 +354,7 @@ long int findFileSize(FILE *inFileP) {
     return fileSize; 
 }
 
+/*Print the file statistics when compressing*/
 void printFileStats(long int inFileSize, long int outFileSize) {
     
     float compressionPercent;
@@ -372,12 +371,4 @@ void printFileStats(long int inFileSize, long int outFileSize) {
     printf("\nSuccess!\n");
     printf("Your file was compressed from %ld bytes to %ld bytes! \n", inFileSize, outFileSize);
     printf("Approximately %.2f%% compression was achieved!\n", compressionPercent);
-
-}
-
-void printCompress() {
-    printf("\nCompressing");
-    printf(".");
-    printf(".");
-    printf(".\n");
 }
