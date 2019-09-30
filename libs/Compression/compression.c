@@ -14,12 +14,15 @@ int main() {
 }
 
 void Compress() {
+    
     printf("Name the file you wish to compress?\n");
     
     char inFileName[1024];
     char outFileName[1024];
     
     scanf("%s", inFileName);
+    printCompress();
+
     strcpy(outFileName, inFileName);
     removeFileExtension(outFileName);
     strcat(outFileName, ".min");
@@ -27,6 +30,7 @@ void Compress() {
     FILE *inFileP, *outFileP;
 
     inFileP = fopen(inFileName, "rb");
+    
     if(inFileP == NULL){
       printf("Error! That file does not exist!");   
       exit(1);             
@@ -35,26 +39,33 @@ void Compress() {
 
     outFileP = fopen(outFileName, "wb");
 
-    printf("Compressing");
-    printf(".");
-    printf(".");
-    printf(".\n");
-
     encodeFile(inFileP, outFileP);
+
+    long int inFileSize = findFileSize(inFileP);
+    long int outFileSize = findFileSize(outFileP);
+    
+    printFileStats(inFileSize, outFileSize);
+    printf("Your file can now be found at: %s\n\n", outFileName);
 
     fclose(inFileP);
     fclose(outFileP);
-    printf("Success: your file can be found at %s\n", outFileName);
+
+    deleteFile(inFileName);
 }
 
 void Decompress() {
-    printf("Name the file you wish to Decompress?\n");
+    printf("Name the file you wish to decompress?\n");
+    
     char inFileName[1024];
     char outFileName[1024];
+    
     scanf("%s", inFileName);
+    printf("\nDecompressing...\n");
 
     FILE *inFileP, *outFileP;
+
     inFileP = fopen(inFileName, "rb");
+    
     strcpy(outFileName, inFileName);
     removeFileExtension(outFileName);
     strcat(outFileName, ".txt");
@@ -63,18 +74,16 @@ void Decompress() {
       printf("Error! That file does not exist!");   
       exit(1);             
     }
-    outFileP = fopen(outFileName, "wb");
-    if(outFileP == NULL){
-      printf("Error! That file does not exist!");   
-      exit(1);             
-    }
 
-    printf("Decompressing...\n");
+    outFileP = fopen(outFileName, "wb");
     decodeFile(inFileP, outFileP);
 
     fclose(inFileP);
     fclose(outFileP);
-    printf("Success: your file can be found at %s\n", outFileName);
+
+    deleteFile(inFileName);
+
+    printf("Success!\nYour file can be found at: %s\n\n", outFileName);
 }
 
 /*Build a Huffman Tree and populate it based on the 
@@ -334,5 +343,41 @@ char* removeFileExtension(char* str) {
     return str;
 }
 
- 
+void deleteFile(char* inFileName) {
+   remove(inFileName);
+}
 
+long int findFileSize(FILE *inFileP) {
+    
+    fseek(inFileP, 0L, SEEK_END); 
+    float fileSize = ftell(inFileP); 
+    fclose(inFileP); 
+  
+    return fileSize; 
+}
+
+void printFileStats(long int inFileSize, long int outFileSize) {
+    
+    float compressionPercent;
+    float byteDiff;
+
+    if (outFileSize >= inFileSize) {
+        printf("Error: File is to small to compress!/n");
+        exit(0);
+    }
+
+    byteDiff = ((float)inFileSize - (float)outFileSize);
+    compressionPercent = (byteDiff*100) / (float)inFileSize;
+
+    printf("\nSuccess!\n");
+    printf("Your file was compressed from %ld bytes to %ld bytes! \n", inFileSize, outFileSize);
+    printf("Approximately %.2f%% compression was achieved!\n", compressionPercent);
+
+}
+
+void printCompress() {
+    printf("\nCompressing");
+    printf(".");
+    printf(".");
+    printf(".\n");
+}

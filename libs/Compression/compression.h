@@ -47,6 +47,10 @@ void Compress();
 void Decompress();
 
 char* removeFileExtension(char* str);
+void deleteFile(char* inFileName);
+long int findFileSize(FILE *inFileP);
+void printFileStats(long int inFileSize, long int outFileSize);
+void printCompress();
 
 
 #endif
