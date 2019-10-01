@@ -25,7 +25,7 @@ struct Date {
 	int day;
 	int month;
 	int year;
-}
+};
 
 struct MilitaryRecord {
 	char *rank, *fNameP, *lNameP;
