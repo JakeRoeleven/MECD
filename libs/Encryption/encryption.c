@@ -32,67 +32,74 @@ int main(void)
 {
     char text[1000];
     int key;
-    printf("enter the text you want to cipher: ");
-    scanf("%s", text);
+    printf("enter the text you want to cipher> ");
+   
+    fgets(text, 100, stdin);
+ 
+    text[strlen(text) - 1] = 0;
+ 
     key = encrypt(text);
+    printf("enctrypeted text return is > %s\n", text);
     decrypt(text, key);
-
+    printf("dectrypeted text return is >%s\n", text);
     return 0;
 }
 int encrypt(char text[1000])
 {
 
     int key;
-    int i;
-
+     int i;
     printf("enter the key: ");
     scanf("%d", &key);
-    int len = strlen(text);
-    printf("%d", len);
-    for (i = 0; text[i] != '\n'; i++)
-    {
 
-        if (text[i] == 32)
-        {
-            text[i] = text[i];
-        }
-        else if (text[i] >= 'a' && text[i] <= 'z')
+    
+    int len = strlen(text);
+ 
+    for (i = 0; i < len; i++)
+    {
+         if (text[i] >= 'a' && text[i] <= 'z')
         {
             text[i] = (text[i] - 'a' - key + 26) % 26 + 'a';
         }
         else if (text[i] >= 'A' && text[i] <= 'Z')
         {
-            text[i] = (text[i] - 'A' - key + 26) % 26 + 'A';
+           text[i] = (text[i] - 'A' - key + 26) % 26 + 'A';
         }
-        printf("%c", text[i]);
+        else if (text[i] >= '0' && text[i] <= '9')
+        {
+            text[i] = ((text[i] - '0' - key)%10 + 10)%10 + '0';
+        }
+       
     }
-    printf("\n");
+    
 
     return key;
 }
 
 void decrypt(char text[1000], int key)
 {
-
-    char encryptedtext[1000];
     int i;
-
-    for (i = 0; text[i] != '\0'; i++)
+    
+    int len = strlen(text);
+    for (i = 0; i < len; i++)
     {
-        
-        if (text[i] == 32)
+        if (text[i] == ' ')
         {
-            encryptedtext[i] = text[i];
+             text[i] = text[i];
         }
         else if (text[i] >= 'a' && text[i] <= 'z')
         {
-            encryptedtext[i] = (text[i] - 'a' - key + 26) % 26 - 'a';
+             text[i] = (text[i] - 'a' + key + 26) % 26 + 'a';
         }
         else if (text[i] >= 'A' && text[i] <= 'Z')
         {
-            encryptedtext[i] = (text[i] - 'A' - key + 26) % 26 - 'A';
+           text[i] = (text[i] - 'A' + key + 26) % 26 + 'A';
+
         }
-        printf("%c", encryptedtext[i]);
+        else if (text[i] >= '0' && text[i] <= '9')
+        {
+            text[i] = (text[i] - '0' + key)%10 + '0';
+        }
     }
-    printf("\n");
+   
 }
