@@ -16,8 +16,13 @@
 /*********************************************************************************
  * Function prototypes - all the prototypes for the functions used in the program
 **********************************************************************************/
-int encrypt(char input[1000]);
-void decrypt(char text[1000], int key);
+void encrypt(FILE *inFileP, char *outFile);
+void decrypt(FILE *inFileP, char *outFile);
+unsigned int findFileSize(FILE * inFile);
+void writeStringToFile(char *text, char *outFile, FILE *inFile);
+void encryptFile();
+void decryptFile();
+
 /* search for func to change the file to plain text to pass it to cipher method */
 /******************************************************************************
  * Main: is the main function in the program:
@@ -30,69 +35,142 @@ void decrypt(char text[1000], int key);
 ******************************************************************************/
 int main(void)
 {
-    char text[1000];
-    int key;
-    printf("enter the text you want to cipher: ");
-    scanf("%s", text);
-    key = encrypt(text);
-    decrypt(text, key);
+    encryptFile();
+    decryptFile();
 
     return 0;
 }
-int encrypt(char text[1000])
-{
+
+void encryptFile() {
+
+    char inFileName[1024];
+    FILE *inFileP;
+
+    printf("Name the file you wish to encrypt: ");
+    scanf("%s", inFileName);
+    inFileP = fopen(inFileName, "rb");
+    if (inFileP == NULL) {
+        printf("Error: File not found");
+    }
+
+    printf("Encrypting...\n");
+    encrypt(inFileP, inFileName);
+    printf("Success!\n");
+}
+
+void decryptFile() {
+    char inFileName[1024];
+    FILE *inFileP;
+
+    printf("Name the file you wish to decrypt: ");
+    scanf("%s", inFileName);
+    inFileP = fopen(inFileName, "rb");
+    if (inFileP == NULL) {
+        printf("Error: File not found");
+    }
+
+    printf("Decrypting...\n");
+    decrypt(inFileP, inFileName);
+    printf("Success!\n");
+}
+
+
+
+void encrypt(FILE *inFile, char *outFile) {
 
     int key;
-    int i;
+    int i, j, c;
+    char text[findFileSize(inFile)];
 
-    printf("enter the key: ");
+    printf("Enter the key: ");
     scanf("%d", &key);
-    int len = strlen(text);
-    printf("%d", len);
-    for (i = 0; text[i] != '\n'; i++)
+    while (key < 1 || key > 10) {
+        printf("Invalid Key! - The key needs to be a positive digit less than 10!\n");
+        printf("Enter the key: ");
+        scanf("%d", &key);
+    }
+    
+    j = 0;
+    while ((c = fgetc(inFile)) != EOF) {
+        text[j] = c;
+        j++;
+    }
+    
+    for (i = 0; i < j; i++)
     {
-
-        if (text[i] == 32)
-        {
-            text[i] = text[i];
-        }
-        else if (text[i] >= 'a' && text[i] <= 'z')
+         if (text[i] >= 'a' && text[i] <= 'z')
         {
             text[i] = (text[i] - 'a' - key + 26) % 26 + 'a';
         }
         else if (text[i] >= 'A' && text[i] <= 'Z')
         {
-            text[i] = (text[i] - 'A' - key + 26) % 26 + 'A';
+           text[i] = (text[i] - 'A' - key + 26) % 26 + 'A';
         }
-        printf("%c", text[i]);
+        else if (text[i] >= '0' && text[i] <= '9')
+        {
+            text[i] = ((text[i] - '0' - key)%10 + 10)%10 + '0';
+        }
     }
-    printf("\n");
-
-    return key;
+    writeStringToFile(text, outFile, inFile);
 }
 
-void decrypt(char text[1000], int key)
+void decrypt(FILE *inFile, char *outFile)
 {
+    int i, key, c, j = 0;
+    printf("Enter the key: ");
+    scanf("%d", &key);
+    while (key < 1 || key > 10) {
+        printf("Invalid Key! - The key needs to be a positive digit less than 10!\n");
+        printf("Enter the key: ");
+        scanf("%d", &key);
+    }
 
-    char encryptedtext[1000];
-    int i;
+    unsigned int fileSize = findFileSize(inFile);
+    char text[fileSize];
+    
+    while ((c = fgetc(inFile)) != EOF) {
+        text[j] = c;
+        j++;
+    }
 
-    for (i = 0; text[i] != '\0'; i++)
+    for (i = 0; i < j; i++)
     {
-        
-        if (text[i] == 32)
+        if (text[i] == ' ')
         {
-            encryptedtext[i] = text[i];
+             text[i] = text[i];
         }
         else if (text[i] >= 'a' && text[i] <= 'z')
         {
-            encryptedtext[i] = (text[i] - 'a' - key + 26) % 26 - 'a';
+             text[i] = (text[i] - 'a' + key + 26) % 26 + 'a';
         }
         else if (text[i] >= 'A' && text[i] <= 'Z')
         {
-            encryptedtext[i] = (text[i] - 'A' - key + 26) % 26 - 'A';
+           text[i] = (text[i] - 'A' + key + 26) % 26 + 'A';
+
         }
-        printf("%c", encryptedtext[i]);
+        else if (text[i] >= '0' && text[i] <= '9')
+        {
+            text[i] = (text[i] - '0' + key)%10 + '0';
+        }
     }
-    printf("\n");
+    writeStringToFile(text, outFile, inFile); 
+}
+
+unsigned int findFileSize(FILE * inFile) {
+    unsigned int i = 0;
+    int c;
+    while ((c = fgetc(inFile)) != EOF) {
+        i++;
+    }
+    rewind(inFile);
+    return i;
+}
+
+void writeStringToFile(char *text, char *fileNameP, FILE *inFileP) {
+    fclose(inFileP);
+    remove(fileNameP);
+    FILE *outFileP;
+    outFileP = fopen(fileNameP,"w");
+    fprintf(outFileP, "%s\n", text);
+    fclose(outFileP);
 }
