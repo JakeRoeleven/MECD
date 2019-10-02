@@ -32,14 +32,27 @@ void menu() {
 			printf("Enter Choice:\n");
 			printf("1 - Compress File\n");
 			printf("2 - Decompress File\n");
+			printf("3 - Encrypt File\n");
+			printf("4 - Decrypt File\n");
 			printf("Enter choice (number between 1-10)>\n");
+			fflush(stdin);
 			scanf("%d", &choice);
+			getchar();
+
 
 		switch (choice){
 	        case 1:
 				compressOnly();
+				break;
 			case 2:
 				decompressOnly();
+				break;
+			case 3:
+				encryptOnly();
+				break;
+			case 4:
+				decryptOnly();
+				break;
 			default:
 				printf("Invalid choice\n");
 				break;

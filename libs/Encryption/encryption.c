@@ -18,10 +18,10 @@
 **********************************************************************************/
 void encrypt(FILE *inFileP, char *outFile);
 void decrypt(FILE *inFileP, char *outFile);
-unsigned int findFileSize(FILE * inFile);
+unsigned int getFileSize(FILE * inFile);
 void writeStringToFile(char *text, char *outFile, FILE *inFile);
-void encryptFile();
-void decryptFile();
+void encryptFile(char *inFileName);
+void decryptFile(char *inFileName);
 
 /* search for func to change the file to plain text to pass it to cipher method */
 /******************************************************************************
@@ -33,24 +33,17 @@ void decryptFile();
  * outputs:
  * - 0 when it finished dealing with the program.
 ******************************************************************************/
-int main(void)
-{
-    encryptFile();
-    decryptFile();
 
-    return 0;
-}
+void encryptFile(char *inFileName) {
 
-void encryptFile() {
-
-    char inFileName[1024];
     FILE *inFileP;
 
-    printf("Name the file you wish to encrypt: ");
-    scanf("%s", inFileName);
+    /*printf("Name the file you wish to encrypt: ");
+    scanf("%s", inFileName);*/
     inFileP = fopen(inFileName, "rb");
     if (inFileP == NULL) {
         printf("Error: File not found");
+        exit(0);
     }
 
     printf("Encrypting...\n");
@@ -58,15 +51,16 @@ void encryptFile() {
     printf("Success!\n");
 }
 
-void decryptFile() {
-    char inFileName[1024];
+void decryptFile(char *inFileName) {
+
     FILE *inFileP;
 
-    printf("Name the file you wish to decrypt: ");
-    scanf("%s", inFileName);
+    /*printf("Name the file you wish to decrypt: ");
+    scanf("%s", inFileName);*/
     inFileP = fopen(inFileName, "rb");
     if (inFileP == NULL) {
         printf("Error: File not found");
+        exit(0);
     }
 
     printf("Decrypting...\n");
@@ -80,7 +74,7 @@ void encrypt(FILE *inFile, char *outFile) {
 
     int key;
     int i, j, c;
-    char text[findFileSize(inFile)];
+    char text[getFileSize(inFile)];
 
     printf("Enter the key: ");
     scanf("%d", &key);
@@ -125,7 +119,7 @@ void decrypt(FILE *inFile, char *outFile)
         scanf("%d", &key);
     }
 
-    unsigned int fileSize = findFileSize(inFile);
+    unsigned int fileSize = getFileSize(inFile);
     char text[fileSize];
     
     while ((c = fgetc(inFile)) != EOF) {
@@ -156,7 +150,7 @@ void decrypt(FILE *inFile, char *outFile)
     writeStringToFile(text, outFile, inFile); 
 }
 
-unsigned int findFileSize(FILE * inFile) {
+unsigned int getFileSize(FILE * inFile) {
     unsigned int i = 0;
     int c;
     while ((c = fgetc(inFile)) != EOF) {
