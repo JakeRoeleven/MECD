@@ -16,8 +16,13 @@
 /*********************************************************************************
  * Function prototypes - all the prototypes for the functions used in the program
 **********************************************************************************/
-int encrypt(char input[1000]);
-void decrypt(char text[1000], int key);
+void encrypt(FILE *inFileP, char *outFile);
+void decrypt(FILE *inFileP, char *outFile);
+unsigned int findFileSize(FILE * inFile);
+void writeStringToFile(char *text, char *outFile, FILE *inFile);
+void encryptFile();
+void decryptFile();
+
 /* search for func to change the file to plain text to pass it to cipher method */
 /******************************************************************************
  * Main: is the main function in the program:
@@ -30,32 +35,68 @@ void decrypt(char text[1000], int key);
 ******************************************************************************/
 int main(void)
 {
-    char text[1000];
-    int key;
-    printf("enter the text you want to cipher> ");
-   
-    fgets(text, 100, stdin);
- 
-    text[strlen(text) - 1] = 0;
- 
-    key = encrypt(text);
-    printf("enctrypeted text return is > %s\n", text);
-    decrypt(text, key);
-    printf("dectrypeted text return is >%s\n", text);
+    encryptFile();
+    decryptFile();
+
     return 0;
 }
-int encrypt(char text[1000])
-{
+
+void encryptFile() {
+
+    char inFileName[1024];
+    FILE *inFileP;
+
+    printf("Name the file you wish to encrypt: ");
+    scanf("%s", inFileName);
+    inFileP = fopen(inFileName, "rb");
+    if (inFileP == NULL) {
+        printf("Error: File not found");
+    }
+
+    printf("Encrypting...\n");
+    encrypt(inFileP, inFileName);
+    printf("Success!\n");
+}
+
+void decryptFile() {
+    char inFileName[1024];
+    FILE *inFileP;
+
+    printf("Name the file you wish to decrypt: ");
+    scanf("%s", inFileName);
+    inFileP = fopen(inFileName, "rb");
+    if (inFileP == NULL) {
+        printf("Error: File not found");
+    }
+
+    printf("Decrypting...\n");
+    decrypt(inFileP, inFileName);
+    printf("Success!\n");
+}
+
+
+
+void encrypt(FILE *inFile, char *outFile) {
 
     int key;
-     int i;
-    printf("enter the key: ");
-    scanf("%d", &key);
+    int i, j, c;
+    char text[findFileSize(inFile)];
 
+    printf("Enter the key: ");
+    scanf("%d", &key);
+    while (key < 1 || key > 10) {
+        printf("Invalid Key! - The key needs to be a positive digit less than 10!\n");
+        printf("Enter the key: ");
+        scanf("%d", &key);
+    }
     
-    int len = strlen(text);
- 
-    for (i = 0; i < len; i++)
+    j = 0;
+    while ((c = fgetc(inFile)) != EOF) {
+        text[j] = c;
+        j++;
+    }
+    
+    for (i = 0; i < j; i++)
     {
          if (text[i] >= 'a' && text[i] <= 'z')
         {
@@ -69,19 +110,30 @@ int encrypt(char text[1000])
         {
             text[i] = ((text[i] - '0' - key)%10 + 10)%10 + '0';
         }
-       
     }
-    
-
-    return key;
+    writeStringToFile(text, outFile, inFile);
 }
 
-void decrypt(char text[1000], int key)
+void decrypt(FILE *inFile, char *outFile)
 {
-    int i;
+    int i, key, c, j = 0;
+    printf("Enter the key: ");
+    scanf("%d", &key);
+    while (key < 1 || key > 10) {
+        printf("Invalid Key! - The key needs to be a positive digit less than 10!\n");
+        printf("Enter the key: ");
+        scanf("%d", &key);
+    }
+
+    unsigned int fileSize = findFileSize(inFile);
+    char text[fileSize];
     
-    int len = strlen(text);
-    for (i = 0; i < len; i++)
+    while ((c = fgetc(inFile)) != EOF) {
+        text[j] = c;
+        j++;
+    }
+
+    for (i = 0; i < j; i++)
     {
         if (text[i] == ' ')
         {
@@ -101,5 +153,24 @@ void decrypt(char text[1000], int key)
             text[i] = (text[i] - '0' + key)%10 + '0';
         }
     }
-   
+    writeStringToFile(text, outFile, inFile); 
+}
+
+unsigned int findFileSize(FILE * inFile) {
+    unsigned int i = 0;
+    int c;
+    while ((c = fgetc(inFile)) != EOF) {
+        i++;
+    }
+    rewind(inFile);
+    return i;
+}
+
+void writeStringToFile(char *text, char *fileNameP, FILE *inFileP) {
+    fclose(inFileP);
+    remove(fileNameP);
+    FILE *outFileP;
+    outFileP = fopen(fileNameP,"w");
+    fprintf(outFileP, "%s\n", text);
+    fclose(outFileP);
 }
