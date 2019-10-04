@@ -1,86 +1,78 @@
+/*******************************************************************************
+ * 48430 Fundamentals of C Programming - Group Assignment
+ * 
+ * Encryption
+ * 
+ * Author(s):
+ *  Zinh AL-Sweedy - 12402677
+ *  Jake Roeleven - 13246638
+ * Date Complete:
+ *  4/10/2019
+*******************************************************************************/
+
+
+
 #include <stdio.h>  /* printf,scanf ,fgets,fread,fwrite,stdin*/
 #include <string.h> /* strlen, strcpy,strncpy,strcmp*/
 #include <stdlib.h> /* sizeof,NULL */
 
-/******************************************************************************
- * List preprocessing directives - you may define your own.
-******************************************************************************/
-/* #define 
- */
-/******************************************************************************
- * List structs - definition for struct date_time and struct flight only. Each
- * struct definition should have only the fields mentioned in the assignment
- * description.
-******************************************************************************/
 
-/*********************************************************************************
- * Function prototypes - all the prototypes for the functions used in the program
-**********************************************************************************/
-void encrypt(FILE *inFileP, char *outFile);
-void decrypt(FILE *inFileP, char *outFile);
-unsigned int findFileSize(FILE * inFile);
-void writeStringToFile(char *text, char *outFile, FILE *inFile);
+void encrypt(char *inFileName);
+void decrypt(char *inFileName);
+void writeToFile(const char *text, char *inFileName);
+char* readfromFile(char *inFileName);
 void encryptFile();
 void decryptFile();
 
-/* search for func to change the file to plain text to pass it to cipher method */
-/******************************************************************************
- * Main: is the main function in the program:
- * in the main function, the program read the choice from the user to know what 
- * is asked for and deal with each choice from the user in the correct way.
- * inputs:
- * - none
- * outputs:
- * - 0 when it finished dealing with the program.
-******************************************************************************/
-int main(void)
-{
+int main(void)  {
     encryptFile();
     decryptFile();
-
     return 0;
 }
 
 void encryptFile() {
 
     char inFileName[1024];
-    FILE *inFileP;
-
     printf("Name the file you wish to encrypt: ");
     scanf("%s", inFileName);
-    inFileP = fopen(inFileName, "rb");
-    if (inFileP == NULL) {
-        printf("Error: File not found");
+    
+    FILE *testFile = fopen(inFileName, "r");
+    if (testFile == NULL) {
+        printf("Error: File not found!\n");
+        exit(0);
     }
+    fclose(testFile);
 
     printf("Encrypting...\n");
-    encrypt(inFileP, inFileName);
+    encrypt(inFileName);
     printf("Success!\n");
+
 }
 
 void decryptFile() {
+    
     char inFileName[1024];
-    FILE *inFileP;
-
     printf("Name the file you wish to decrypt: ");
     scanf("%s", inFileName);
-    inFileP = fopen(inFileName, "rb");
-    if (inFileP == NULL) {
-        printf("Error: File not found");
+
+    FILE *testFile = fopen(inFileName, "r");
+    if (testFile == NULL) {
+        printf("Error: File not found\n");
+        exit(0);
     }
+    fclose(testFile);
 
     printf("Decrypting...\n");
-    decrypt(inFileP, inFileName);
+    decrypt(inFileName);
     printf("Success!\n");
+
 }
 
 
 
-void encrypt(FILE *inFile, char *outFile) {
+void encrypt(char *inFileName) {
 
-    int key;
-    int i, j, c;
-    char text[findFileSize(inFile)];
+    int key, i;
 
     printf("Enter the key: ");
     scanf("%d", &key);
@@ -90,15 +82,10 @@ void encrypt(FILE *inFile, char *outFile) {
         scanf("%d", &key);
     }
     
-    j = 0;
-    while ((c = fgetc(inFile)) != EOF) {
-        text[j] = c;
-        j++;
-    }
-    
-    for (i = 0; i < j; i++)
-    {
-         if (text[i] >= 'a' && text[i] <= 'z')
+    char *text = readfromFile(inFileName);
+
+    for (i = 0; i < (strlen(text)); i++) {
+        if (text[i] >= 'a' && text[i] <= 'z')
         {
             text[i] = (text[i] - 'a' - key + 26) % 26 + 'a';
         }
@@ -111,12 +98,12 @@ void encrypt(FILE *inFile, char *outFile) {
             text[i] = ((text[i] - '0' - key)%10 + 10)%10 + '0';
         }
     }
-    writeStringToFile(text, outFile, inFile);
+    writeToFile(text, inFileName);
 }
 
-void decrypt(FILE *inFile, char *outFile)
-{
-    int i, key, c, j = 0;
+void decrypt(char *inFileName) {
+    
+    int key, i;
     printf("Enter the key: ");
     scanf("%d", &key);
     while (key < 1 || key > 10) {
@@ -125,16 +112,9 @@ void decrypt(FILE *inFile, char *outFile)
         scanf("%d", &key);
     }
 
-    unsigned int fileSize = findFileSize(inFile);
-    char text[fileSize];
-    
-    while ((c = fgetc(inFile)) != EOF) {
-        text[j] = c;
-        j++;
-    }
+    char *text = readfromFile(inFileName);
 
-    for (i = 0; i < j; i++)
-    {
+    for (i = 0; i < (strlen(text)); i++) {
         if (text[i] == ' ')
         {
              text[i] = text[i];
@@ -153,24 +133,46 @@ void decrypt(FILE *inFile, char *outFile)
             text[i] = (text[i] - '0' + key)%10 + '0';
         }
     }
-    writeStringToFile(text, outFile, inFile); 
+
+    writeToFile(text, inFileName); 
 }
 
-unsigned int findFileSize(FILE * inFile) {
-    unsigned int i = 0;
-    int c;
-    while ((c = fgetc(inFile)) != EOF) {
-        i++;
-    }
-    rewind(inFile);
-    return i;
-}
-
-void writeStringToFile(char *text, char *fileNameP, FILE *inFileP) {
-    fclose(inFileP);
-    remove(fileNameP);
+void writeToFile(const char *text, char *inFileName) {
+    
+    remove(inFileName);
     FILE *outFileP;
-    outFileP = fopen(fileNameP,"w");
-    fprintf(outFileP, "%s\n", text);
+    outFileP = fopen(inFileName,"w");
+
+    int i;
+    int len = strlen(text);
+
+    for (i = 0; i < len; i++) {
+        fprintf(outFileP, "%c", text[i]);
+    }
+
     fclose(outFileP);
+}
+
+char* readfromFile(char *inFileName) {
+    
+    char *buffer = 0;
+    long length;
+    FILE * inFileP = fopen(inFileName, "rb");
+    if (inFileP == NULL) {
+        printf("Error: File not found\n");
+        exit(0);
+    }
+
+    if (inFileP) {
+      fseek (inFileP, 0, SEEK_END);
+      length = ftell (inFileP);
+      fseek (inFileP, 0, SEEK_SET);
+      buffer = malloc (length);
+      if (buffer)
+      {
+        fread (buffer, 1, length, inFileP);
+      }
+      fclose (inFileP);
+    }
+    return buffer;
 }
