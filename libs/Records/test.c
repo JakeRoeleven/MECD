@@ -9,8 +9,43 @@
  * 
  * Notes: 
 *******************************************************************************/
-#include "records.h"
+/*Packages*/
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
+typedef struct MilitaryRecord Record;
+typedef struct Date Date;
+
+struct Date {
+	int day;
+	int month;
+	int year;
+};
+
+struct MilitaryRecord {
+	char *rank;
+	char *NameP; 
+	Date DOB; 
+	int currentlyActive;
+	char *currentDeployment;
+	char *militaryID;
+};
+
+char* getFileHeader();
+void writeToFile(Record record, char*inFileName); 
+void readFile();
+void writeFileHeader(char *inFileName);
+void filterHeader(char *str);
+void addRecord(char *inFileName);
+int getStrLen(char str[1024]);
+void displayFile(char *str);
+void printHeader();
+void buildRecord();
+
+int main() {
+	return 0;
+}
 
 void buildRecord() {
 	char inFileName[1024];
@@ -19,7 +54,7 @@ void buildRecord() {
     scanf("%s", inFileName);
     strcat(inFileName, ".txt");
     getchar();
-    writeHeader(inFileName);
+    writeFileHeader(inFileName);
     while (i == 1) {
     	printf("Add a new record (1 for Yes, O for No): ");
     	scanf("%d", &i);
@@ -109,7 +144,7 @@ void addRecord(char *inFileName) {
     	record.rank, record.NameP, record.militaryID, 
     	record.DOB.day, record.DOB.month, record.DOB.year,
     	record.currentlyActive, record.currentDeployment);
-	writeRecordToFile(record, inFileName);
+	writeToFile(record, inFileName);
 }
 
 int getStrLen(char str[1024]) {
@@ -120,14 +155,14 @@ int getStrLen(char str[1024]) {
     return count;
 }
 
-void writeHeader(char *inFileName) {
+void writeFileHeader(char *inFileName) {
     FILE *fileP;
     fileP = fopen(inFileName, "w"); 
     fprintf(fileP, "%s", getFileHeader());
     fclose(fileP);
 }
 
-void writeRecordToFile(Record record, char *inFileName) {
+void writeToFile(Record record, char *inFileName) {
     FILE *fileP;
     fileP = fopen(inFileName, "a+"); 
     fprintf(fileP, "%s %s %s %d-%d-%d %d %s\n", 
@@ -137,21 +172,13 @@ void writeRecordToFile(Record record, char *inFileName) {
     fclose(fileP);
 }
 
-/*The File Header is placed at the top of every file created*/
 char* getFileHeader() { 
 	char *HeaderInfo = ("-------------------------------------------------------------------------------------------\n"
-						"------------------------------------MECD DATABASE FILE-------------------------------------\n"
-						"-------------------------------------------------------------------------------------------\n"
 						"This military record was built with the military compression and encryption database (MCED)\n"
-						"----This is for confidential viewing of authorised personel only, do not let other see!----\n"
-						"--------This file can only be accessed using the MCED utility command line program!--------\n"
-						"------------------------Thank you for using the MCED utility.------------------------------\n"
-						"--------------------For more info go to: https://github.com/JakeRoeleven/FundOfC-----------\n"
-						"-------------------------------------------------------------------------------------------\n"
-						"----------------------------DO NOT USE WITH ANY OTHER PROGRAM------------------------------\n"
-						"-------------------------------------------------------------------------------------------\n"
-						"-------------------------------------------------------------------------------------------\n"
-						"----------------------COPYRIGHT 2019 DO NOT USE WITHOUT PERMISSION-------------------------\n"
+						"This is for confidential viewing of authorised personel only!\n"
+						"This file can only be accessed using the MCED utility\n"
+						"Thank you for using the MCED utility.\n"
+						"For more info go to: https://github.com/JakeRoeleven/FundOfC\n"
 						"-------------------------------------------------------------------------------------------\n");
 	return HeaderInfo;
 }
@@ -198,8 +225,7 @@ void displayFile(char *str) {
 }
 
 void printHeader() {
-	printf("\n-----------------------MECD REORD------------------------\n");
+	printf("-----------------------MECD REORD------------------------\n");
 	printf("Rank   Name   ID   DOB   Active    Current    Deployment\n");
     printf("--------------------------------------------------------\n");
 }
-

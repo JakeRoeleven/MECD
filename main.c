@@ -8,8 +8,6 @@
  * Date Complete:
 *******************************************************************************/
 
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,16 +33,16 @@ int main(int argc, char *argv[]) {
             		helpMenu();
             		break;
                 case 'c': 
-            		printf("Create Records: TODO");
+            		createRecords();
             		break;
                 case 'v': 
-            		printf("View Records: TODO");
+            		displayRecords();
             		break;
                 case 'e': 
-                    printf("Encrypt and Compress: TODO");
+                    encryptAndCompressFile();
             		break;
                 case 'd': 
-                    printf("Decrypt and Decompress: TODO");
+                    decryptAndDecompressFile();
             		break;
                 case 'u': 
                     utilityMenu();

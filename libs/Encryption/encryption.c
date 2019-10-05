@@ -24,17 +24,8 @@ char* readfromFile(char *inFileName);
 void encryptFile();
 void decryptFile();
 
-int main(void)  {
-    encryptFile();
-    decryptFile();
-    return 0;
-}
 
-void encryptFile() {
-
-    char inFileName[1024];
-    printf("Name the file you wish to encrypt: ");
-    scanf("%s", inFileName);
+void encryptFile(char *inFileName) {
     
     FILE *testFile = fopen(inFileName, "r");
     if (testFile == NULL) {
@@ -49,11 +40,7 @@ void encryptFile() {
 
 }
 
-void decryptFile() {
-    
-    char inFileName[1024];
-    printf("Name the file you wish to decrypt: ");
-    scanf("%s", inFileName);
+void decryptFile(char *inFileName) {
 
     FILE *testFile = fopen(inFileName, "r");
     if (testFile == NULL) {
@@ -158,6 +145,7 @@ char* readfromFile(char *inFileName) {
     char *buffer = 0;
     long length;
     FILE * inFileP = fopen(inFileName, "rb");
+    
     if (inFileP == NULL) {
         printf("Error: File not found\n");
         exit(0);
@@ -165,14 +153,13 @@ char* readfromFile(char *inFileName) {
 
     if (inFileP) {
       fseek (inFileP, 0, SEEK_END);
-      length = ftell (inFileP);
+      length = ftell(inFileP);
       fseek (inFileP, 0, SEEK_SET);
-      buffer = malloc (length);
-      if (buffer)
-      {
+      buffer = malloc(length);
+      if (buffer) {
         fread (buffer, 1, length, inFileP);
       }
       fclose (inFileP);
     }
-    return buffer;
+    return buffer;  
 }

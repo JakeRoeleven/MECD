@@ -354,7 +354,7 @@ void printFileStats(long int inFileSize, long int outFileSize) {
     float byteDiff;
 
     if (outFileSize >= inFileSize) {
-        printf("Error: File is to small to compress!/n");
+        printf("Error: File is to small to compress!\n");
         exit(0);
     }
 

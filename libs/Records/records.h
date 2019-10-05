@@ -37,9 +37,9 @@ struct MilitaryRecord {
 };
 
 char* getFileHeader();
-void writeToFile(Record record, char*inFileName); 
+void writeRecordToFile(Record record, char*inFileName); 
 void readFile();
-void writeFileHeader(char *inFileName);
+void writeHeader(char *inFileName);
 void filterHeader(char *str);
 void addRecord(char *inFileName);
 int getStrLen(char str[1024]);
