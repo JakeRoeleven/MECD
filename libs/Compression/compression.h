@@ -38,7 +38,7 @@ struct HuffmanNode {
 };
 
 /*Function Prototypes*/
-void Compress();
+void Compress(char *inFileName);
 void Decompress();
 
 Node *buildHuffmanTree(int frequenciesArray[]);

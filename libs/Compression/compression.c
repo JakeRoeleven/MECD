@@ -18,22 +18,15 @@
 /*Inclusions*/
 #include "compression.h"
 
-/*Testing purposes TODO: Delete*/
-int main() {
-    Compress();
-    Decompress();
-    return 0;
-}
-
 /*Main function to call compression*/
-void Compress() {
+void Compress(char *inFileName) {
     
-    char inFileName[1024], outFileName[1024];
+    char outFileName[1024];
     FILE *inFileP, *outFileP;
     long int inFileSize, outFileSize;
     
-    printf("Name the file you wish to compress?\n");
-    scanf("%s", inFileName);
+    /*printf("Name the file you wish to compress?\n");
+    scanf("%s", inFileName);*/
     
     printf("\nCompressing...");
 
@@ -63,13 +56,13 @@ void Compress() {
 }
 
 /*Main function to call decompression*/
-void Decompress() {
+void Decompress(char *inFileName) {
 
-    char inFileName[1024], outFileName[1024];
+    char outFileName[1024];
     FILE *inFileP, *outFileP;
     
-    printf("Name the file you wish to decompress?\n");
-    scanf("%s", inFileName);
+    /*printf("Name the file you wish to decompress?\n");
+    scanf("%s", inFileName);*/
 
     printf("\nDecompressing...\n");
     
@@ -361,7 +354,7 @@ void printFileStats(long int inFileSize, long int outFileSize) {
     float byteDiff;
 
     if (outFileSize >= inFileSize) {
-        printf("Error: File is to small to compress!/n");
+        printf("Error: File is to small to compress!\n");
         exit(0);
     }
 
