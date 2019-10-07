@@ -10,20 +10,7 @@
  *  4/10/2019
 *******************************************************************************/
 
-
-
-#include <stdio.h>  /* printf,scanf ,fgets,fread,fwrite,stdin*/
-#include <string.h> /* strlen, strcpy,strncpy,strcmp*/
-#include <stdlib.h> /* sizeof,NULL */
-
-
-void encrypt(char *inFileName);
-void decrypt(char *inFileName);
-void writeToFile(const char *text, char *inFileName);
-char* readfromFile(char *inFileName);
-void encryptFile();
-void decryptFile();
-
+#include "encyption.h"
 
 void encryptFile(char *inFileName) {
     
