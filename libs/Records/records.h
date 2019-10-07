@@ -36,15 +36,15 @@ struct MilitaryRecord {
 	char *militaryID;
 };
 
-char* getFileHeader();
+char *getFileHeader();
 void writeRecordToFile(Record record, char*inFileName); 
-void readFile();
+char *readFile();
 void writeHeader(char *inFileName);
 void filterHeader(char *str);
 void addRecord(char *inFileName);
 int getStrLen(char str[1024]);
 void displayFile(char *str);
 void printHeader();
-void buildRecord();
+void buildRecord(char *inFileName);
 
 #endif

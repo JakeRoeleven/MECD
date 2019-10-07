@@ -12,13 +12,8 @@
 #include "records.h"
 
 
-void buildRecord() {
-	char inFileName[1024];
+void buildRecord(char *inFileName) {
 	int i = 1;
-	printf("What would you like to name the file: ");
-    scanf("%s", inFileName);
-    strcat(inFileName, ".txt");
-    getchar();
     writeHeader(inFileName);
     while (i == 1) {
     	printf("Add a new record (1 for Yes, O for No): ");
@@ -138,7 +133,7 @@ void writeRecordToFile(Record record, char *inFileName) {
 }
 
 /*The File Header is placed at the top of every file created*/
-char* getFileHeader() { 
+char *getFileHeader() { 
 	char *HeaderInfo = ("-------------------------------------------------------------------------------------------\n"
 						"------------------------------------MECD DATABASE FILE-------------------------------------\n"
 						"-------------------------------------------------------------------------------------------\n"
@@ -156,7 +151,7 @@ char* getFileHeader() {
 	return HeaderInfo;
 }
 
-void readFile() {
+char *readFile() {
 	char inFileName[1024];
 	printf("What file would you like to display: ");
     scanf("%s", inFileName);

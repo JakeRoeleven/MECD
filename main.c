@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "libs/Interface/interface.c"
+#include "libs/Interface/interface.h"
 
 #define Green "\e[32m"
 #define printf(X) printf(Green "%s",X);
@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
                     utilityMenu();
             		break;
                 case 'r': 
-                    printf("Recent Files: TODO");
+                    viewFileDatabase();
             		break;
                 default:
                     printf("Sorry that's not a valid argument!\n");
