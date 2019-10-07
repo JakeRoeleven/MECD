@@ -13,7 +13,7 @@
 #include <string.h>
 
 #include "../Compression/compression.h"
-#include "../Encryption/encryption.c"
+#include "../Encryption/encryption.h"
 #include "../Records/records.h"
 
 char* changeFileExtension(char* fileName);

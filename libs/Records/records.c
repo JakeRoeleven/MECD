@@ -198,8 +198,8 @@ void displayFile(char *str) {
 }
 
 void printHeader() {
-	printf("\n-----------------------MECD REORD------------------------\n");
-	printf("Rank   Name   ID   DOB   Active    Current    Deployment\n");
-    printf("--------------------------------------------------------\n");
+	printf("\n--------------------------MECD RECORD---------------------\n");
+	printf("Rank   Name     ID   DOB   Active    Current    Deployment\n");
+    printf("----------------------------------------------------------\n");
 }
 

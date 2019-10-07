@@ -10,7 +10,7 @@
  *  4/10/2019
 *******************************************************************************/
 
-#include "encyption.h"
+#include "encryption.h"
 
 void encryptFile(char *inFileName) {
     

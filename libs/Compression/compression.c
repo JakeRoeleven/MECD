@@ -37,7 +37,7 @@ void Compress(char *inFileName) {
     outFileP = fopen(outFileName, "wb");
     
     if(inFileP == NULL) {
-        printf("Error! That file does not exist!");   
+        printf("Error! That file does not exist!\n");   
         exit(1);             
     }
 
@@ -74,7 +74,7 @@ void Decompress(char *inFileName) {
     outFileP = fopen(outFileName, "wb");
 
     if(inFileP == NULL) {
-        printf("Error! That file does not exist!");   
+        printf("Error! That file does not exist!\n");   
         exit(1);             
     }
 
