@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
         }
     } 
     else {
-        printf("Hey! You didn't pass in an argument! Try Again!\n");
+        printf("Hey! You didn't pass in an argument! Try Again!\n\n\n");
         return 0;
     }
 
