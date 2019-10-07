@@ -1,7 +1,7 @@
 /*******************************************************************************
  * 48430 Fundamentals of C Programming - Group Assignment
  * 
- * Encryption
+ * Encryption 
  * 
  * Author(s):
  *  Zinh AL-Sweedy - 12402677
@@ -129,7 +129,7 @@ void writeToFile(const char *text, char *inFileName) {
 
 char* readfromFile(char *inFileName) {
     
-    char *buffer = 0;
+    char *fileBuffer = 0;
     long length;
     FILE * inFileP = fopen(inFileName, "rb");
     
@@ -142,11 +142,11 @@ char* readfromFile(char *inFileName) {
       fseek (inFileP, 0, SEEK_END);
       length = ftell(inFileP);
       fseek (inFileP, 0, SEEK_SET);
-      buffer = malloc(length);
-      if (buffer) {
-        fread (buffer, 1, length, inFileP);
+      fileBuffer = malloc(length);
+      if (fileBuffer) {
+        fread (fileBuffer, 1, length, inFileP);
       }
       fclose (inFileP);
     }
-    return buffer;  
+    return fileBuffer;  
 }
