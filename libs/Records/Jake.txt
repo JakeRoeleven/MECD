@@ -1,7 +1,0 @@
--------------------------------------------------------------------------------------------
-This military record was built with the military compression and encryption database (MCED)
-This is for confidential viewing of authorised personel only!
-This file can only be accessed using the MCED utility
-Thank you for using the MCED utility.
-For more info go to: https://github.com/JakeRoeleven/FundOfC
--------------------------------------------------------------------------------------------
