@@ -1,359 +1,152 @@
 /*******************************************************************************
  * 48430 Fundamentals of C Programming - Group Assignment
  * 
- * Huffman Compression
+ * Encryption 
  * 
  * Author(s):
+ *  Zinh AL-Sweedy - 12402677
  *  Jake Roeleven - 13246638
  * Date Complete:
- *  30/05/2019
- * Notes: 
- *  The follwoing refrences were used to help complete this algorithm:
- *  - https://en.wikipedia.org/wiki/Huffman_coding
- *  - https://www.geeksforgeeks.org/huffman-coding-greedy-algo-3/
- *  - https://gitlab.com/mehalter/Huffman-Coding-C/blob/master/huffman.c
- *  - https://github.com/DanielScocco/Simple-Huffman-Coding/blob/master/huffman.c
+ *  4/10/2019
 *******************************************************************************/
 
-/*Inclusions*/
-#include "compression.h"
+#include "encryption.h"
 
-/*Main function to call compression*/
-void Compress(char *inFileName) {
+void encryptFile(char *inFileName) {
     
-    char outFileName[1024];
-    FILE *inFileP, *outFileP;
-    long int inFileSize, outFileSize;
-    
-    /*printf("Name the file you wish to compress?\n");
-    scanf("%s", inFileName);*/
-    
-    printf("\nCompressing...");
-
-    inFileP = fopen(inFileName, "rb");
-    strcpy(outFileName, inFileName);
-    removeFileExtension(outFileName);
-    strcat(outFileName, ".min");
-    outFileP = fopen(outFileName, "wb");
-    
-    if(inFileP == NULL) {
-        printf("Error! That file does not exist!\n");   
-        exit(1);             
+    FILE *testFile = fopen(inFileName, "r");
+    if (testFile == NULL) {
+        printf("Error: File not found!\n");
+        exit(0);
     }
+    fclose(testFile);
 
-    encodeFile(inFileP, outFileP);
+    printf("Encrypting...\n");
+    encrypt(inFileName);
+    printf("Success!\n");
 
-    fseek(inFileP, 0L, SEEK_END); 
-    inFileSize = ftell(inFileP);
-    fseek(outFileP, 0L, SEEK_END); 
-    outFileSize = ftell(outFileP);
-
-    printFileStats(inFileSize, outFileSize);
-    printf("Your file can now be found at: %s\n\n", outFileName);
-
-    fclose(inFileP);
-    fclose(outFileP);
-
-    deleteFile(inFileName);
 }
 
-/*Main function to call decompression*/
-void Decompress(char *inFileName) {
+void decryptFile(char *inFileName) {
 
-    char outFileName[1024];
-    FILE *inFileP, *outFileP;
-    
-    /*printf("Name the file you wish to decompress?\n");
-    scanf("%s", inFileName);*/
-
-    printf("\nDecompressing...\n");
-    
-    strcpy(outFileName, inFileName);
-    removeFileExtension(outFileName);
-    strcat(outFileName, ".txt");
-
-    inFileP = fopen(inFileName, "rb");
-    outFileP = fopen(outFileName, "wb");
-
-    if(inFileP == NULL) {
-        printf("Error! That file does not exist!\n");   
-        exit(1);             
+    FILE *testFile = fopen(inFileName, "r");
+    if (testFile == NULL) {
+        printf("Error: File not found\n");
+        exit(0);
     }
+    fclose(testFile);
 
-    decodeFile(inFileP, outFileP);
+    printf("Decrypting...\n");
+    decrypt(inFileName);
+    printf("Success!\n");
 
-    printf("Success!\nYour file can be found at: %s\n\n", outFileName);
-
-    fclose(inFileP);
-    fclose(outFileP);
-
-    deleteFile(inFileName);
 }
 
-/*Build a Huffman Tree and populate it based on the frequencies pased in */
-Node *buildHuffmanTree(int frequenciesArray[]) {
+
+
+void encrypt(char *inFileName) {
+
+    int key, i;
+
+    printf("Enter the key: ");
+    scanf("%d", &key);
+    while (key < 1 || key > 10) {
+        printf("Invalid Key! - The key needs to be a positive digit less than 10!\n");
+        printf("Enter the key: ");
+        scanf("%d", &key);
+    }
     
-    int i, length = 0;
-    Node *NodelistP[MAX_CHAR_RANGE];
-    
-    for(i = 0; i < MAX_CHAR_RANGE; i++) {
-        if(frequenciesArray[i]) {
-            Node *currentNodeP = (Node *)calloc(1, sizeof(Node));
-            currentNodeP->contents = i;
-            currentNodeP->frequency = frequenciesArray[i];
-            NodelistP[length++] = currentNodeP;
+    char *text = readfromFile(inFileName);
+
+    for (i = 0; i < (strlen(text)); i++) {
+        if (text[i] >= 'a' && text[i] <= 'z')
+        {
+            text[i] = (text[i] - 'a' - key + 26) % 26 + 'a';
+        }
+        else if (text[i] >= 'A' && text[i] <= 'Z')
+        {
+           text[i] = (text[i] - 'A' - key + 26) % 26 + 'A';
+        }
+        else if (text[i] >= '0' && text[i] <= '9')
+        {
+            text[i] = ((text[i] - '0' - key)%10 + 10)%10 + '0';
         }
     }
+    writeToFile(text, inFileName);
+}
+
+void decrypt(char *inFileName) {
     
-    while(length > 1) {
-        Node *currentNodeP = (Node *)malloc(sizeof(Node));
-        qsort(NodelistP, length, sizeof(Node *), compareNodes);
-
-        currentNodeP->leftP = NodelistP[--length];
-        currentNodeP->rightP = NodelistP[--length];
-
-        currentNodeP->frequency = currentNodeP->leftP->frequency + 
-                                 currentNodeP->rightP->frequency;
-        
-        NodelistP[length++] = currentNodeP;
+    int key, i;
+    printf("Enter the key: ");
+    scanf("%d", &key);
+    while (key < 1 || key > 10) {
+        printf("Invalid Key! - The key needs to be a positive digit less than 10!\n");
+        printf("Enter the key: ");
+        scanf("%d", &key);
     }
-    
-    return NodelistP[0];
-}
 
-/*Build a table to list the nodes to chars*/
-char **buildCharacterTable(int frequenciesArray[]) {
-    
-    static char *tableP[MAX_CHAR_RANGE];
-    char *toFindP = (char *)calloc(1, sizeof(char));
-    Node* treeP = buildHuffmanTree(frequenciesArray);
-    searchHuffmanTree(treeP, tableP, toFindP); 
-    freeHuffmanTree(treeP);
+    char *text = readfromFile(inFileName);
 
-    return tableP;
-}
-
-/*Recursivly search the huffman tree till we react a node with no neighbours*/
-void searchHuffmanTree(Node *treeP, char **tableP, char *toFindP) {
-    
-    if (!treeP->leftP && !treeP->rightP) tableP[treeP->contents] = toFindP;
-
-    else {
-        if(treeP->leftP) {
-            searchHuffmanTree(treeP->leftP, tableP, concatSuffix(toFindP, '0'));
+    for (i = 0; i < (strlen(text)); i++) {
+        if (text[i] == ' ')
+        {
+             text[i] = text[i];
         }
-        if(treeP->rightP) {
-            searchHuffmanTree(treeP->rightP, tableP, concatSuffix(toFindP, '1'));
-        } 
-        free(toFindP);
-    }
-}
+        else if (text[i] >= 'a' && text[i] <= 'z')
+        {
+             text[i] = (text[i] - 'a' + key + 26) % 26 + 'a';
+        }
+        else if (text[i] >= 'A' && text[i] <= 'Z')
+        {
+           text[i] = (text[i] - 'A' + key + 26) % 26 + 'A';
 
-/*Compare nodes and return a int based on which one is bigger*/
-int compareNodes(const void *nodeOneP, const void *nodeTwoP) {
-   
-    const Node** nodeAPP = (const Node**) nodeOneP;
-    const Node** nodeBPP = (const Node**) nodeTwoP;
-
-    if ((*nodeAPP)->frequency == (*nodeBPP)->frequency) return 0;
-    else if ((*nodeAPP)->frequency < (*nodeBPP)->frequency) return 1;
-    else return -1;
-}
-
-/*Write the file header to decode the file*/
-void writeFileHeader(FILE *outFileP, int frequenciesArray[]) {
-    
-    int i, count = 0;
-    
-    for (i = 0; i < MAX_CHAR_RANGE; i++) {
-        if (frequenciesArray[i]) {
-            count++;
+        }
+        else if (text[i] >= '0' && text[i] <= '9')
+        {
+            text[i] = (text[i] - '0' + key)%10 + '0';
         }
     }
 
-    fprintf(outFileP, "%d\n", count);
-
-    for (i = 0; i < MAX_CHAR_RANGE; i++) {
-        if (frequenciesArray[i]) {
-            fprintf(outFileP, "%d %d\n", i, frequenciesArray[i]);
-        }
-    }
+    writeToFile(text, inFileName); 
 }
 
-/*Read file headers to then decode the file*/
-int *readFileHeader(FILE *inFileP) {
-
-    static int frequenciesArray[MAX_CHAR_RANGE];
-    int i, count, letter, freq;
+void writeToFile(const char *text, char *inFileName) {
     
-    if(fscanf(inFileP, "%d", &count) != 1) {
-        printf("Invalid input file!");
-    }
-    
-    for(i = 0; i < count; i++) {
-        if((fscanf(inFileP, "%d %d", &letter, &freq) != 2) || letter < 0 || letter >= MAX_CHAR_RANGE) {
-            printf("invalid input file.");
-        }
-        
-        frequenciesArray[letter] = freq;
-    }
+    remove(inFileName);
+    FILE *outFileP;
+    outFileP = fopen(inFileName,"w");
 
-    fgetc(inFileP); 
-    
-    return frequenciesArray;
-}
-
-/*Add the encoded bit array to the file*/
-void encodeBit(const char *charArrayP, FILE *outFileP) {
-    
-    static int bit = 0, bitCount = 0;
-    
-    while(*charArrayP) {
-
-        bit = bit * 2 + *charArrayP - '0';
-        bitCount++;
-        
-        if(bitCount == 8) {
-            fputc(bit, outFileP);
-            bit = 0;
-            bitCount = 0;
-        }
-        
-        charArrayP++;
-    }
-}
-
-/*Get the encoded bit array from the file*/
-int decodeBit(FILE *inFileP) {
-
-    static int bit = 0, bitCount = 0;
-    int nextBit;
-
-    if (bitCount == 0) {
-        bit = fgetc(inFileP);
-        bitCount = (1 << (CHAR_BIT_SIZE - 1));
-    }
-
-    nextBit = bit/bitCount;
-    bit %= bitCount;
-    bitCount /= 2;
-
-    return nextBit;
-}
-
-/*Convert the bit array to a readble char*/
-int bitToChar(FILE *inFileP, Node *treeP) {
-
-    while (treeP->leftP || treeP->rightP) {
-        if(!treeP) {
-            printf("Error file format");
-            exit(1);;
-        }
-        else if (decodeBit(inFileP)) {
-            treeP = treeP->rightP;
-        }
-        else {
-            treeP = treeP->leftP;
-        }
-    }
-    return treeP->contents;
-}
-
-/*Add a digit to the end of a char string and associated memory managment*/
-char *concatSuffix(char *currentP, char suffix) {
-    char *newChar = (char *)malloc(strlen(currentP) + 2);
-    sprintf(newChar, "%s%c", currentP, suffix);
-    return newChar;
-}
-
-/*Structue processing for encoding a file*/
-void encodeFile(FILE *inFileP, FILE *outFileP) {
-    
-    int c, frequenciesArray[MAX_CHAR_RANGE] = {0};
-    char **tablePP;
-    
-    while((c = fgetc(inFileP)) != EOF) {
-        frequenciesArray[c]++;
-    } 
-    
-    frequenciesArray[EOF_FLAG] = 1;
-    rewind(inFileP);
-    
-    tablePP = buildCharacterTable(frequenciesArray);
-    writeFileHeader(outFileP, frequenciesArray);
-    
-    while((c = fgetc(inFileP)) != EOF) {
-        encodeBit(tablePP[c], outFileP);
-    }
-    
-    encodeBit(tablePP[EOF_FLAG], outFileP);
-    encodeBit("0000000", outFileP);
-    
-    freeTable(tablePP);
-}
-
-/*Structue processing for encoding a file*/
-void decodeFile(FILE *inFileP, FILE *outFileP) {
-    
-    int *frequenciesArray, c;
-    Node *treePP;
-    
-    frequenciesArray = readFileHeader(inFileP);
-    treePP = buildHuffmanTree(frequenciesArray);
-    
-    while((c = bitToChar(inFileP, treePP)) != EOF_FLAG) {
-        fputc(c, outFileP);
-    }
-    
-    freeHuffmanTree(treePP);
-}
-
-/*Free the allocated memory space of the Huffman tree*/
-void freeHuffmanTree(Node *treeP) {
-    if (treeP) {
-        freeHuffmanTree(treeP->leftP);
-        freeHuffmanTree(treeP->rightP);
-        free (treeP);
-    }
-}
-
-/*Free the allocated memory space of the table*/
-void freeTable(char *tableP[]) {
     int i;
-    for (i = 0; i < MAX_CHAR_RANGE; i++) {
-        if (tableP[i]) {
-            free(tableP[i]);
-        }
+    int len = strlen(text);
+
+    for (i = 0; i < len; i++) {
+        fprintf(outFileP, "%c", text[i]);
     }
+
+    fclose(outFileP);
 }
 
-/*remoce the last four letter of the file*/
-char* removeFileExtension(char* fileNameP) {
-    size_t nameLength = strlen(fileNameP);
-    fileNameP[4 <= nameLength ? nameLength-4 : 0] = '\0';
-    return fileNameP;
-}
-
-/*Delete the file*/
-void deleteFile(char* inFileNameP) {
-   remove(inFileNameP);
-}
-
-/*Print the file statistics when compressing*/
-void printFileStats(long int inFileSize, long int outFileSize) {
+char* readfromFile(char *inFileName) {
     
-    float compressionPercent;
-    float byteDiff;
-
-    if (outFileSize >= inFileSize) {
-        printf("Error: File is to small to compress!\n");
+    char *fileBuffer = 0;
+    long length;
+    FILE * inFileP = fopen(inFileName, "rb");
+    
+    if (inFileP == NULL) {
+        printf("Error: File not found\n");
         exit(0);
     }
 
-    byteDiff = ((float)inFileSize - (float)outFileSize);
-    compressionPercent = (byteDiff*100) / (float)inFileSize;
-
-    printf("\nSuccess!\n");
-    printf("Your file was compressed from %ld bytes to %ld bytes! \n", inFileSize, outFileSize);
-    printf("Approximately %.2f%% compression was achieved!\n", compressionPercent);
+    if (inFileP) {
+      fseek (inFileP, 0, SEEK_END);
+      length = ftell(inFileP);
+      fseek (inFileP, 0, SEEK_SET);
+      fileBuffer = malloc(length);
+      if (fileBuffer) {
+        fread (fileBuffer, 1, length, inFileP);
+      }
+      fclose (inFileP);
+    }
+    return fileBuffer;  
 }
