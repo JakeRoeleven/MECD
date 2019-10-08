@@ -28,16 +28,16 @@ struct Date {
 };
 
 struct MilitaryRecord {
-	char *rank;
-	char *NameP; 
+	char rank[64];
+	char NameP[64]; 
 	Date DOB; 
 	int currentlyActive;
-	char *currentDeployment;
-	char *militaryID;
+	char currentDeployment[64];
+	char militaryID[64];
 };
 
 char *getFileHeader();
-void writeRecordToFile(Record record, char*inFileName); 
+void writeRecordToFile(Record *record, char*inFileName); 
 char *readFile();
 void writeHeader(char *inFileName);
 void filterHeader(char *str);

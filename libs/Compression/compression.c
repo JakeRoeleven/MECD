@@ -43,9 +43,11 @@ void Compress(char *inFileName) {
 
     encodeFile(inFileP, outFileP);
 
-    inFileSize = findFileSize(inFileP);
-    outFileSize = findFileSize(outFileP);
-    
+    fseek(inFileP, 0L, SEEK_END); 
+    inFileSize = ftell(inFileP);
+    fseek(outFileP, 0L, SEEK_END); 
+    outFileSize = ftell(outFileP);
+
     printFileStats(inFileSize, outFileSize);
     printf("Your file can now be found at: %s\n\n", outFileName);
 
@@ -335,16 +337,6 @@ char* removeFileExtension(char* fileNameP) {
 /*Delete the file*/
 void deleteFile(char* inFileNameP) {
    remove(inFileNameP);
-}
-
-/*Find the file size*/
-long int findFileSize(FILE *inFileP) {
-    
-    fseek(inFileP, 0L, SEEK_END); 
-    float fileSize = ftell(inFileP); 
-    fclose(inFileP); 
-  
-    return fileSize; 
 }
 
 /*Print the file statistics when compressing*/
