@@ -1,126 +1,140 @@
 /*******************************************************************************
  * 48430 Fundamentals of C Programming - Group Assignment
- * 
- * Records 
- * 
- * Author(s):
+ * Authors:
  * 	Jake Roeleven - 13246638
+ * 	Thomas Coates - 13276922
+ * 	Beichen Man   - 12416780
+ * 	Zinh AL-Sweedy - 12402677
  * Date Complete:
- * 
- * Notes: 
 *******************************************************************************/
 
-#include "records.h"
-#include "string.h"
+#include "interface.h"
 
-
-void buildRecord(char *inFileName) {
-	int i = 1;
-    writeHeader(inFileName);
-    while (i == 1) {
-    	printf("Add a new record (1 for Yes, O for No): ");
-    	scanf("%d", &i);
-    	getchar();
-    	if (i == 1) addRecord(inFileName);
-    }
-    printf("Success! Your file can be found at %s\n", inFileName);
+void encryptAndCompressFile() {	
+	char inFileName[1024];
+    printf("Name the file you wish to encrypt and compress?\n");
+    scanf("%s", inFileName);
+    getchar();
+    encryptFile(inFileName);
+	Compress(inFileName);
+	addFileToQueue(createFileRecord(inFileName, 1, 1));
 }
 
-void addRecord(char *inFileName) {
+void decryptAndDecompressFile() {	
+	char inFileName[1024];
+    printf("Name the file you wish to Decompress and decrypt?\n");
+    scanf("%s", inFileName);
+    getchar();
+	Decompress(inFileName);
+	decryptFile(changeFileExtension(inFileName));
+	addFileToQueue(createFileRecord(inFileName, 0, 0));
+}
 
-	Record *record = (Record *) malloc(sizeof(Record));
-
-	char nameBuffer[65];
-	memset(record->NameP,0,sizeof(record->NameP));
-	printf("\nEnter first name, last name seperated by a space: ");
-	if (fgets(nameBuffer, sizeof nameBuffer, stdin) != NULL) {
-	  size_t len = strlen(nameBuffer);
-	  if (len > 0 && nameBuffer[len-1] == '\n') {
-	    nameBuffer[--len] = '\0';
-	  }
-	}
-	strncpy(record->NameP, nameBuffer, (strlen(nameBuffer)));
-	fflush(stdin);
+void compressOnly() {
 	
-	char rankBuffer[65];
-	memset(record->rank,0,sizeof(record->NameP));
-	printf("Enter rank: ");
-	if (fgets(rankBuffer, sizeof rankBuffer, stdin) != NULL) {
-	  size_t len = strlen(rankBuffer);
-	  if (len > 0 && rankBuffer[len-1] == '\n') {
-	    rankBuffer[--len] = '\0';
-	  }
-	}
-	strncpy(record->rank, rankBuffer, strlen(rankBuffer));
-	fflush(stdin);
-	memset(rankBuffer,0,sizeof(rankBuffer));
+	char inFileName[1024];
+    printf("Name the file you wish to compress?\n");
+    scanf("%s", inFileName);
+	Compress(inFileName);
+	addFileToQueue(createFileRecord(inFileName, 0, 1));
 
+}
 
+void decompressOnly() {
+	char inFileName[1024];
+    printf("Name the file you wish to decompress?\n");
+    scanf("%s", inFileName);
+	Decompress(inFileName);
+	addFileToQueue(createFileRecord(inFileName, 0, 0));
+}
 
-	char militaryBuffer[65];
-	printf("Enter Military ID: ");
-	memset(record->militaryID,0,sizeof(record->militaryID));
-	if (fgets(militaryBuffer, sizeof militaryBuffer, stdin) != NULL) {
-	  size_t len = strlen(militaryBuffer);
-	  if (len > 0 && militaryBuffer[len-1] == '\n') {
-	    militaryBuffer[--len] = '\0';
-	  }
-	}
-	strncpy(record->militaryID, militaryBuffer, strlen(militaryBuffer));
-	fflush(stdin);
-	memset(militaryBuffer,0,sizeof(militaryBuffer));
+void encryptOnly() {
+	char inFileName[1024];
+    printf("Name the file you wish to encrypt?\n");
+    scanf("%s", inFileName);
+	encryptFile(inFileName);
+	addFileToQueue(createFileRecord(inFileName, 1, 0));
+}
 
+void decryptOnly() {
+	char inFileName[1024];
+    printf("Name the file you wish to decrypt?\n");
+    scanf("%s", inFileName);
+	decryptFile(inFileName);
+	addFileToQueue(createFileRecord(inFileName, 0, 0));
+}
 
+void createRecords() {
+	char inFileName[1024];
+	printf("What would you like to name the file: ");
+    scanf("%s", inFileName);
+    strcat(inFileName, ".txt");
+    buildRecord(inFileName);
+	addFileToQueue(createFileRecord(inFileName, 0, 0));
+}
 
-	printf("Enter Date of Birth. ");
-	printf("Enter month, date and year seperated by spaces: ");
-	scanf("%d %d %d", &record->DOB.day
-			, &record->DOB.month
-			, &record->DOB.year);
-	getchar();
+void displayRecords() {
+	readFile();
+}
+
+char* changeFileExtension(char* fileNameP) {
+    size_t nameLength = strlen(fileNameP);
+    fileNameP[4 <= nameLength ? nameLength-4 : 0] = '\0';
+    strcat(fileNameP, ".txt");
+    return fileNameP;
+}
+
+void addFileToQueue(FileRecord record) {
+	FILE *recentFileP;
+	recentFileP = fopen("fileDatabase.txt", "a+");
+	fwrite(&record, sizeof(FileRecord), 1, recentFileP);
+	fclose(recentFileP);
+}
+
+FileRecord createFileRecord(char *inFileName, int encrypted, int compressed) {
+	FileRecord filerecord;
+	int i;
+	strcpy(filerecord.FileName, inFileName);
+	filerecord.encrypted = encrypted;
+	filerecord.compressed = compressed;
+	return filerecord;
+}
+
+void viewFileDatabase() {
+
+	VECTOR(recentRecords);
+	FILE *recentFileP;
+	FileRecord record[20];
+	int recordsRead = 0, i;
+
+    recentFileP = fopen("fileDatabase.txt", "r");
+   
 	
-	printf("Are they Currently Active (Enter 1 For Yes, 0 For No): ");
-	scanf("%d", &record->currentlyActive);
-	getchar();
-
-	char deploymentBuffer[65];
-	memset(record->currentDeployment,0,sizeof(record->currentDeployment));
-	printf("Where are they Currently Deployed: ");
-	if (fgets(deploymentBuffer, sizeof deploymentBuffer, stdin) != NULL) {
-	  size_t len = strlen(deploymentBuffer);
-	  if (len > 0 && deploymentBuffer[len-1] == '\n') {
-	    deploymentBuffer[--len] = '\0';
-	  }
+    /*Check if the database is null, throw and error and return 0*/
+    if (recentFileP == NULL) {
+		printf("Read error: Did you delete the database file?\n\n\n");
+		exit(0);
 	}
-	strncpy(record->currentDeployment, deploymentBuffer, strlen(deploymentBuffer));
-	fflush(stdin);
-	memset(deploymentBuffer,0,sizeof(deploymentBuffer));
-
-	printf("Adding Record: %s %s %s %d-%d-%d %d %s\n\n", 
-    	record->rank, record->NameP, record->militaryID, 
-    	record->DOB.day, record->DOB.month, record->DOB.year,
-    	record->currentlyActive, record->currentDeployment);
-	writeRecordToFile(record, inFileName);
-	free(record);
-}
-
-int getStrLen(char str[1024]) {
-	int count = 0;
-	while (str[count] != '\n') {
-        count++;
+    
+    while (fread (&record[recordsRead], sizeof(FileRecord), 1, recentFileP) && recordsRead < 20) {
+    	VECTOR_PUSHBACK(recentRecords, &record[recordsRead]);
+    	recordsRead++;
     }
-    return count;
+    fclose(recentFileP);
+
+    displayRecordHeader();
+    for (i = 0; i < VECTOR_SIZE(recentRecords); i++) {
+	    displayRecord(*VECTOR_AT(recentRecords, FileRecord *, i));
+	}
+	printf("--------------1 = TRUE, 0 = FALSE-------------------\n");
 }
 
-void writeHeader(char *inFileName) {
-    FILE *fileP;
-    fileP = fopen(inFileName, "w"); 
-    fprintf(fileP, "%s", getFileHeader());
-    fclose(fileP);
+void displayRecord(FileRecord fileRecord) {
+	printf("%-31s %d %9d\n", fileRecord.FileName, fileRecord.encrypted, fileRecord.compressed);
 }
 
-void writeRecordToFile(Record *record, char *inFileName) {
-    FILE *fileP;
-    fileP = fopen(inFileName, "a+"); 
-    fprintf(fileP, "%s %s %s %d-%d-%d %d %s\n", 
-    	record->rank, record->NameP, record->militaryID, 
+void displayRecordHeader() {
+	printf("---------------RECENT FILES ACCESSED----------------\n");
+	printf("FILE NAME                       ENCRYPTED COMPRESSED\n");
+    printf("----------------------------------------------------\n");
+}
