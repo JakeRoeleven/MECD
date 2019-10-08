@@ -74,7 +74,7 @@ void createRecords() {
 }
 
 void displayRecords() {
-	addFileToQueue(createFileRecord(readFile(), 0, 0));
+	readFile();
 }
 
 char* changeFileExtension(char* fileNameP) {

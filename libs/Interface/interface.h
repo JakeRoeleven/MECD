@@ -34,6 +34,7 @@ void compressOnly();
 void decompressOnly();
 void encryptOnly();
 void createRecords();
+void displayRecords();
 void decryptOnly();
 void viewFileDatabase();
 void displayRecord(FileRecord fileRecord);

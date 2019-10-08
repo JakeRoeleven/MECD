@@ -89,8 +89,6 @@ void helpMenu() {
     	   "v - View Military Records\n"
     	   "    > This option allows you to view properly formatted military\n"
     	   "      records.\n"
-    	   /* TODO: Confirm this */
-    	   "    > You can search and sort records through this option!\n"
     	   "e - Encrypt and Compress Records\n"
     	   "    > This option encrypts and compresses you files.\n"
     	   "    > Your file will be avalible as a .min file after this option.\n"
