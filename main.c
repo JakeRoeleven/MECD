@@ -142,3 +142,18 @@ void utilityMenu() {
 	}
 }
 			
+void CreatRecords(struct lnode* list) {
+    int i;
+    struct record t;
+    struct lnode *n, *r;
+
+    printf ("please input the employee serial number:");
+    getchar ();
+    scanf ("%d", t.number);
+	fflush(stdin);
+	prinf("please input the data：");
+	gets(t.data);
+	strcpy((n->data).word, t.number);
+	strcpy((n->data).mean, t.data);
+	InsertList(list, n);
+}
