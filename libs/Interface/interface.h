@@ -1,41 +1,50 @@
 /*******************************************************************************
  * 48430 Fundamentals of C Programming - Group Assignment
- * Authors:
+ * 
+ * Records 
+ * 
+ * Author(s):
  * 	Jake Roeleven - 13246638
- * 	Thomas Coates - 13276922
- * 	Beichen Man   - 12416780
- * 	Zinh AL-Sweedy - 12402677
  * Date Complete:
+ * 
+ * Notes: 
 *******************************************************************************/
 
+#ifndef RECORD
+#define RECORD
+
+/*Packages*/
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
 
-#include "../Compression/compression.h"
-#include "../Encryption/encryption.h"
-#include "../Records/records.h"
-#include "../Containers/Vector/vector.h"
+typedef struct MilitaryRecord Record;
+typedef struct Date Date;
 
-typedef struct FileRecord FileRecord;
-
-struct FileRecord {
-	char FileName[64];
-	int encrypted;
-	int compressed;
+struct Date {
+	int day;
+	int month;
+	int year;
 };
 
-char* changeFileExtension(char* fileName);
-void addFileToQueue(FileRecord record);
-FileRecord createFileRecord(char *inFileName, int encrypted, int compressed);
-void encryptAndCompressFile();
-void decryptAndDecompressFile();
-void compressOnly();
-void decompressOnly();
-void encryptOnly();
-void createRecords();
-void displayRecords();
-void decryptOnly();
-void viewFileDatabase();
-void displayRecord(FileRecord fileRecord);
-void displayRecordHeader();
+struct MilitaryRecord {
+	char rank[64];
+	char NameP[64]; 
+	Date DOB; 
+	int currentlyActive;
+	char currentDeployment[64];
+	char militaryID[64];
+};
+
+char *getFileHeader();
+void writeRecordToFile(Record *record, char*inFileName); 
+char *readFile();
+void writeHeader(char *inFileName);
+void filterHeader(char *str);
+void addRecord(char *inFileName);
+int getStrLen(char str[1024]);
+void displayFile(char *str);
+void printHeader();
+void buildRecord(char *inFileName);
+
+#endif
