@@ -9,29 +9,33 @@
  *  30/05/2019
  * Notes: 
  *  The follwoing refrences were used to help complete this algorithm:
- *  - https://en.wikipedia.org/wiki/Huffman_coding
- *  - https://www.geeksforgeeks.org/huffman-coding-greedy-algo-3/
- *  - https://gitlab.com/mehalter/Huffman-Coding-C/blob/master/huffman.c
- *  - https://github.com/DanielScocco/Simple-Huffman-Coding/blob/master/huffman.c
+ *   https://en.wikipedia.org/wiki/Huffman_coding
+ *   https://www.geeksforgeeks.org/huffman-coding-greedy-algo-3/
+ *   https://gitlab.com/mehalter/Huffman-Coding-C/blob/master/huffman.c
+ *   https://github.com/DanielScocco/Simple-Huffman-Coding/blob/master/huffman.c
 *******************************************************************************/
 
 /*Inclusions*/
 #include "compression.h"
 
+/*Debugging
+int main() {
+    Compress();
+    Decompress();
+    return 0;
+}*/
+
 /*Main function to call compression*/
-void Compress(char *inFileName) {
+void Compress(char *inFileNameP) {
     
     char outFileName[1024];
     FILE *inFileP, *outFileP;
     long int inFileSize, outFileSize;
     
-    /*printf("Name the file you wish to compress?\n");
-    scanf("%s", inFileName);*/
-    
     printf("\nCompressing...");
 
-    inFileP = fopen(inFileName, "rb");
-    strcpy(outFileName, inFileName);
+    inFileP = fopen(inFileNameP, "rb");
+    strcpy(outFileName, inFileNameP);
     removeFileExtension(outFileName);
     strcat(outFileName, ".min");
     outFileP = fopen(outFileName, "wb");
@@ -54,25 +58,25 @@ void Compress(char *inFileName) {
     fclose(inFileP);
     fclose(outFileP);
 
-    deleteFile(inFileName);
+    deleteFile(inFileNameP);
 }
 
 /*Main function to call decompression*/
-void Decompress(char *inFileName) {
+void Decompress(char *inFileNameP) {
 
     char outFileName[1024];
     FILE *inFileP, *outFileP;
     
     /*printf("Name the file you wish to decompress?\n");
-    scanf("%s", inFileName);*/
+    scanf("%s", inFileNameP);*/
 
     printf("\nDecompressing...\n");
     
-    strcpy(outFileName, inFileName);
+    strcpy(outFileName, inFileNameP);
     removeFileExtension(outFileName);
     strcat(outFileName, ".txt");
 
-    inFileP = fopen(inFileName, "rb");
+    inFileP = fopen(inFileNameP, "rb");
     outFileP = fopen(outFileName, "wb");
 
     if(inFileP == NULL) {
@@ -87,7 +91,7 @@ void Decompress(char *inFileName) {
     fclose(inFileP);
     fclose(outFileP);
 
-    deleteFile(inFileName);
+    deleteFile(inFileNameP);
 }
 
 /*Build a Huffman Tree and populate it based on the frequencies pased in */
@@ -112,8 +116,10 @@ Node *buildHuffmanTree(int frequenciesArray[]) {
         currentNodeP->leftP = NodelistP[--length];
         currentNodeP->rightP = NodelistP[--length];
 
-        currentNodeP->frequency = currentNodeP->leftP->frequency + 
-                                 currentNodeP->rightP->frequency;
+        unsigned frequency = currentNodeP->leftP->frequency + 
+                             currentNodeP->rightP->frequency;
+
+        currentNodeP->frequency = frequency;
         
         NodelistP[length++] = currentNodeP;
     }
@@ -143,7 +149,7 @@ void searchHuffmanTree(Node *treeP, char **tableP, char *toFindP) {
             searchHuffmanTree(treeP->leftP, tableP, concatSuffix(toFindP, '0'));
         }
         if(treeP->rightP) {
-            searchHuffmanTree(treeP->rightP, tableP, concatSuffix(toFindP, '1'));
+            searchHuffmanTree(treeP->rightP, tableP, concatSuffix(toFindP,'1'));
         } 
         free(toFindP);
     }
@@ -155,8 +161,12 @@ int compareNodes(const void *nodeOneP, const void *nodeTwoP) {
     const Node** nodeAPP = (const Node**) nodeOneP;
     const Node** nodeBPP = (const Node**) nodeTwoP;
 
-    if ((*nodeAPP)->frequency == (*nodeBPP)->frequency) return 0;
-    else if ((*nodeAPP)->frequency < (*nodeBPP)->frequency) return 1;
+    if ((*nodeAPP)->frequency == (*nodeBPP)->frequency) {
+        return 0;
+    }
+    else if ((*nodeAPP)->frequency < (*nodeBPP)->frequency) {
+        return 1;
+    } 
     else return -1;
 }
 
@@ -191,7 +201,9 @@ int *readFileHeader(FILE *inFileP) {
     }
     
     for(i = 0; i < count; i++) {
-        if((fscanf(inFileP, "%d %d", &letter, &freq) != 2) || letter < 0 || letter >= MAX_CHAR_RANGE) {
+        if((fscanf(inFileP, "%d %d", &letter, &freq) != 2) 
+            || letter >= MAX_CHAR_RANGE
+            || letter < 0 ) {
             printf("invalid input file.");
         }
         
@@ -354,6 +366,8 @@ void printFileStats(long int inFileSize, long int outFileSize) {
     compressionPercent = (byteDiff*100) / (float)inFileSize;
 
     printf("\nSuccess!\n");
-    printf("Your file was compressed from %ld bytes to %ld bytes! \n", inFileSize, outFileSize);
-    printf("Approximately %.2f%% compression was achieved!\n", compressionPercent);
+    printf("Your file was compressed from %ld bytes to %ld bytes! \n",
+        inFileSize, outFileSize);
+    printf("Approximately %.2f%% compression was achieved!\n", 
+        compressionPercent);
 }

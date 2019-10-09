@@ -1,23 +1,24 @@
 /*******************************************************************************
  * 48430 Fundamentals of C Programming - Group Assignment
  * 
- * Records 
+ * Record Managament  
  * 
  * Author(s):
  * 	Jake Roeleven - 13246638
  * Date Complete:
- * 
- * Notes: 
+*	9/10/2019
 *******************************************************************************/
 
+/*Double Inclusion Guard*/
 #ifndef RECORD
 #define RECORD
 
 /*Packages*/
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+#include <stdio.h>  /* printf,scanf ,fgets,fread,fwrite,stdin*/
+#include <string.h> /* strlen, strcpy,strncpy,strcmp*/
+#include <stdlib.h> /* sizeof,NULL */
 
+/* Structs */
 typedef struct MilitaryRecord Record;
 typedef struct Date Date;
 
@@ -36,13 +37,13 @@ struct MilitaryRecord {
 	char militaryID[64];
 };
 
+/*Function Prototypes */
 char *getFileHeader();
 void writeRecordToFile(Record *record, char*inFileName); 
 char *readFile();
 void writeHeader(char *inFileName);
 void filterHeader(char *str);
 void addRecord(char *inFileName);
-int getStrLen(char str[1024]);
 void displayFile(char *str);
 void printHeader();
 void buildRecord(char *inFileName);

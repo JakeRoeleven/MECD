@@ -18,5 +18,5 @@ MECD: $(OBJ)
 
 .PHONY: clean
 
-clean :
-	-rm edit $(objects)
+clean:
+	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~ 

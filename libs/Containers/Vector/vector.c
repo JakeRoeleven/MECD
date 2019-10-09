@@ -1,10 +1,9 @@
 /*******************************************************************************
  * 48430 Fundamentals of C Programming - Group Assignment
  * Authors:
- * 	   Jake Roeleven
+ * 	   Jake Roeleven - 13246638
  * Comment:
  *     The libary functions included in the Vector Data Structure
- *     Read vector.h for more info
 *******************************************************************************/
 
 #include <stdio.h>

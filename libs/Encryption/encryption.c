@@ -1,140 +1,169 @@
 /*******************************************************************************
  * 48430 Fundamentals of C Programming - Group Assignment
  * 
- * Encryption 
+ * Encryption - Substutition Shift Cypher
  * 
  * Author(s):
  *  Zinh AL-Sweedy - 12402677
  *  Jake Roeleven - 13246638
  * Date Complete:
  *  4/10/2019
+ * Refrences:
+ *  https://codescracker.com/c/program/c-program-encrypt-file.htm
+ *  https://medium.com/@randerson112358/programming-encryption-algorithms-
+ *  520cb98c039d
+ *  https://docs.microsoft.com/en- us/windows/win32/seccrypto/example-c-program-
+ *  using-cryptencryptmessage- and-cryptdecryptmessage
+ *  https://c-program-example.com/2012/04/c-program-to-encrypt-and-decrypt-a-
+ *  password.html>  
 *******************************************************************************/
 
+/*Inclusions*/
 #include "encryption.h"
 
-void encryptFile(char *inFileName) {
+/* Debugging     
+int main(void)  {
+    encryptFile();
+    decryptFile();
+    return 0;
+}*/
+
+/* Process to encrypt the file and related Error Checks */
+void encryptFile(char *inFileNamePP) {
     
-    FILE *testFile = fopen(inFileName, "r");
-    if (testFile == NULL) {
-        printf("Error: File not found!\n");
+    FILE *fileP = fopen(inFileNamePP, "r");
+    if (fileP == NULL) {
+        printf("Error: File not found!\n\n");
         exit(0);
     }
-    fclose(testFile);
+    fclose(fileP);
 
     printf("Encrypting...\n");
-    encrypt(inFileName);
-    printf("Success!\n");
+    encrypt(inFileNamePP);
+    printf("Success! File Encrypted!\n");
 
 }
 
-void decryptFile(char *inFileName) {
+/* Process to decrypt the file and related Error Checks */
+void decryptFile(char *inFileNamePP) {
 
-    FILE *testFile = fopen(inFileName, "r");
-    if (testFile == NULL) {
-        printf("Error: File not found\n");
+    FILE *fileP = fopen(inFileNamePP, "r");
+    if (fileP == NULL) {
+        printf("Error: File not found\n\n");
         exit(0);
     }
-    fclose(testFile);
+    fclose(fileP);
 
     printf("Decrypting...\n");
-    decrypt(inFileName);
-    printf("Success!\n");
+    decrypt(inFileNamePP);
+    printf("Success! File Decrypted\n");
 
 }
 
-
-
-void encrypt(char *inFileName) {
+/* Substiution Shift Cypher Algorithm */
+void encrypt(char *inFileNameP) {
 
     int key, i;
 
-    printf("Enter the key: ");
+    printf("Warning if you forget your key you will not be able ");
+    printf("to decyrpt your file!");
+    printf("\nEnter the key: ");
     scanf("%d", &key);
     while (key < 1 || key > 10) {
-        printf("Invalid Key! - The key needs to be a positive digit less than 10!\n");
+        printf("Invalid Key! - The key needs to be a positive digit" 
+               " less than 10!\n");
         printf("Enter the key: ");
         scanf("%d", &key);
     }
     
-    char *text = readfromFile(inFileName);
+    char *textP = readfromFile(inFileNameP);
 
-    for (i = 0; i < (strlen(text)); i++) {
-        if (text[i] >= 'a' && text[i] <= 'z')
+    /*Shifts*/
+    for (i = 0; i < (strlen(textP)); i++) {
+        if (textP[i] >= 'a' && textP[i] <= 'z')
         {
-            text[i] = (text[i] - 'a' - key + 26) % 26 + 'a';
+            textP[i] = (textP[i] - 'a' - key + 26) % 26 + 'a';
         }
-        else if (text[i] >= 'A' && text[i] <= 'Z')
+        else if (textP[i] >= 'A' && textP[i] <= 'Z')
         {
-           text[i] = (text[i] - 'A' - key + 26) % 26 + 'A';
+           textP[i] = (textP[i] - 'A' - key + 26) % 26 + 'A';
         }
-        else if (text[i] >= '0' && text[i] <= '9')
+        else if (textP[i] >= '0' && textP[i] <= '9')
         {
-            text[i] = ((text[i] - '0' - key)%10 + 10)%10 + '0';
+            textP[i] = ((textP[i] - '0' - key)%10 + 10)%10 + '0';
         }
     }
-    writeToFile(text, inFileName);
+
+    writeToFile(textP, inFileNameP);
 }
 
-void decrypt(char *inFileName) {
+/* Substiution Shift Cypher Algorithm */
+void decrypt(char *inFileNameP) {
     
     int key, i;
-    printf("Enter the key: ");
+
+    printf("Warning if you enter the wrong key your file will be corrupted");
+    printf("\nEnter the key: ");;
     scanf("%d", &key);
     while (key < 1 || key > 10) {
-        printf("Invalid Key! - The key needs to be a positive digit less than 10!\n");
+        printf("Invalid Key! - The key needs to be a positive digit "
+               " less than 10!\n");
         printf("Enter the key: ");
         scanf("%d", &key);
     }
 
-    char *text = readfromFile(inFileName);
+    char *textP = readfromFile(inFileNameP);
 
-    for (i = 0; i < (strlen(text)); i++) {
-        if (text[i] == ' ')
+    /* Shifts */
+    for (i = 0; i < (strlen(textP)); i++) {
+        if (textP[i] == ' ')
         {
-             text[i] = text[i];
+             textP[i] = textP[i];
         }
-        else if (text[i] >= 'a' && text[i] <= 'z')
+        else if (textP[i] >= 'a' && textP[i] <= 'z')
         {
-             text[i] = (text[i] - 'a' + key + 26) % 26 + 'a';
+             textP[i] = (textP[i] - 'a' + key + 26) % 26 + 'a';
         }
-        else if (text[i] >= 'A' && text[i] <= 'Z')
+        else if (textP[i] >= 'A' && textP[i] <= 'Z')
         {
-           text[i] = (text[i] - 'A' + key + 26) % 26 + 'A';
+           textP[i] = (textP[i] - 'A' + key + 26) % 26 + 'A';
 
         }
-        else if (text[i] >= '0' && text[i] <= '9')
+        else if (textP[i] >= '0' && textP[i] <= '9')
         {
-            text[i] = (text[i] - '0' + key)%10 + '0';
+            textP[i] = (textP[i] - '0' + key)%10 + '0';
         }
     }
 
-    writeToFile(text, inFileName); 
+    writeToFile(textP, inFileNameP); 
 }
 
-void writeToFile(const char *text, char *inFileName) {
+/* Write the string to a file */
+void writeToFile(const char *textP, char *inFileNameP) {
     
-    remove(inFileName);
+    remove(inFileNameP);
     FILE *outFileP;
-    outFileP = fopen(inFileName,"w");
+    outFileP = fopen(inFileNameP, "w");
 
     int i;
-    int len = strlen(text);
+    int len = strlen(textP);
 
     for (i = 0; i < len; i++) {
-        fprintf(outFileP, "%c", text[i]);
+        fprintf(outFileP, "%c", textP[i]);
     }
 
     fclose(outFileP);
 }
 
-char* readfromFile(char *inFileName) {
+/*Open the file and reas its contents to a dynamic sized string*/
+char* readfromFile(char *inFileNameP) {
     
-    char *fileBuffer = 0;
-    long length;
-    FILE * inFileP = fopen(inFileName, "rb");
+    char *fileBufferP = 0;
+    unsigned length;
+    FILE * inFileP = fopen(inFileNameP, "rb");
     
     if (inFileP == NULL) {
-        printf("Error: File not found\n");
+        printf("Error: File not found!\n\n");
         exit(0);
     }
 
@@ -142,11 +171,14 @@ char* readfromFile(char *inFileName) {
       fseek (inFileP, 0, SEEK_END);
       length = ftell(inFileP);
       fseek (inFileP, 0, SEEK_SET);
-      fileBuffer = malloc(length);
-      if (fileBuffer) {
-        fread (fileBuffer, 1, length, inFileP);
+      fileBufferP = malloc(length);
+      
+      if (fileBufferP) {
+        fread (fileBufferP, 1, length, inFileP);
       }
+
       fclose (inFileP);
     }
-    return fileBuffer;  
+
+    return fileBufferP;  
 }

@@ -9,12 +9,13 @@
  * 	30/05/2019
  * Notes: 
  * 	The follwoing refrences were used to help complete this algorithm:
- *  - https://en.wikipedia.org/wiki/Huffman_coding
- *	- https://www.geeksforgeeks.org/huffman-coding-greedy-algo-3/
- * 	- https://gitlab.com/mehalter/Huffman-Coding-C/blob/master/huffman.c
- * 	- https://github.com/DanielScocco/Simple-Huffman-Coding/blob/master/huffman.c
+ *   https://en.wikipedia.org/wiki/Huffman_coding
+ *	 https://www.geeksforgeeks.org/huffman-coding-greedy-algo-3/
+ * 	 https://gitlab.com/mehalter/Huffman-Coding-C/blob/master/huffman.c
+ * 	 https://github.com/DanielScocco/Simple-Huffman-Coding/blob/master/huffman.c
 *******************************************************************************/
 
+/*Double Inclusion Guards*/
 #ifndef COMPRESSION
 #define COMPRESSION
 
@@ -66,7 +67,5 @@ void deleteFile(char* inFileName);
 long int findFileSize(FILE *inFileP);
 void printFileStats(long int inFileSize, long int outFileSize);
 void printCompress();
-
-
 
 #endif
